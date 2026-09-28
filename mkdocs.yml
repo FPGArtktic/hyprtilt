@@ -125,8 +125,19 @@ validation:
 
 nav:
   - Home: index.md
+  - Guide:
+      - Installation: guide/installation.md
+      - Quick start: guide/quick-start.md
+      - Terminal interface: guide/tui.md
+      - Command line: guide/cli.md
+      - Configuration files: guide/configuration.md
+      - Applying and rollback: guide/apply.md
+      - Profiles: guide/profiles.md
+      - Troubleshooting: guide/doctor.md
   - Design:
       - Architecture (ADR 0001): adr/0001-architecture.md
       - Hyprland API notes: hyprland-lua-api.md
   - Project:
       - Roadmap: project/roadmap.md
+      - Changelog: project/changelog.md
+      - Contributing: project/contributing.md

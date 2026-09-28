@@ -22,7 +22,7 @@ inside a managed block, with everything else preserved byte for byte.
 </p>
 
 <div class="ht-actions" markdown>
-[Read the roadmap](project/roadmap.md){ .md-button .md-button--primary }
+[Quick start](guide/quick-start.md){ .md-button .md-button--primary }
 [:fontawesome-brands-github: View on GitHub](https://github.com/FPGArtktic/hyprtilt){ .md-button }
 </div>
 
@@ -79,15 +79,16 @@ hyprtilt treats <strong>your configuration as the source of truth</strong>.
 
     ---
 
-    `hjkl` to move, `r` to rotate, snapping and alignment shortcuts. Works in
-    an 80&times;24 terminal; the mouse is optional.
+    `hjkl` to move, `r` to rotate, `[` `]` for the refresh rate, snapping and
+    alignment shortcuts. Works in an 80&times;24 terminal; the mouse is
+    optional.
 
 -   :material-console-line:{ .lg } __Per-output CLI__
 
     ---
 
     `hyprtilt rotate HDMI-A-1 90` from a keybinding, plus `move`, `scale`,
-    `mode`, `enable`, `disable`, with `--json` and `--dry-run`.
+    `mode`, `refresh`, `enable`, `disable`, with `--json` and `--dry-run`.
 
 -   :material-palette-swatch-outline:{ .lg } __Caelestia aware__
 
@@ -132,6 +133,6 @@ flowchart LR
 
 !!! info "Status"
 
-    hyprtilt is under active development and has no release yet. The design
-    decisions and the verified facts about Hyprland's Lua API are published
-    as they are made; see the [roadmap](project/roadmap.md).
+    hyprtilt works and has no release yet: build it from source or with the
+    `hyprtilt-git` recipe ([Installation](guide/installation.md)). See the
+    [roadmap](project/roadmap.md) for what is left before `v0.1.0`.
