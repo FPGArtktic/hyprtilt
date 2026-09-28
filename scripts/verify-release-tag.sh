@@ -7,12 +7,17 @@
 #   * it is an annotated tag named v<version>, where <version> is the
 #     workspace version in Cargo.toml (SemVer, optionally -rc.N);
 #   * it points at the checked-out commit;
-#   * it carries a good signature from one of the keys in $RELEASE_TAG_KEYS:
-#     OpenPGP public keys (ASCII armored) or SSH public keys, one per line.
-#     The keys come from a repository variable, which only the repository
-#     settings can change, unlike a key file in the tagged tree.
+#   * if the repository variable RELEASE_TAG_KEYS holds public keys, the tag
+#     must carry a good signature from one of them. The keys are OpenPGP
+#     (ASCII armored) or SSH public keys, one per line. They come from a
+#     repository variable, which only the repository settings can change,
+#     unlike a key file in the tagged tree.
 #
-# Usage: RELEASE_TAG_KEYS=... scripts/verify-release-tag.sh TAG
+# Signing is optional: without RELEASE_TAG_KEYS anyone who may push a tag may
+# release, which is the same trust as pushing to main. Set the variable to
+# narrow that down to the holders of specific keys.
+#
+# Usage: [RELEASE_TAG_KEYS=...] scripts/verify-release-tag.sh TAG
 
 set -euo pipefail
 
@@ -29,7 +34,12 @@ fail() {
 [[ "${tag}" == "v${version}" ]] || fail "tag ${tag} does not match the version ${version} in Cargo.toml"
 [[ "$(git cat-file -t "${ref}" 2>/dev/null)" == "tag" ]] || fail "${tag} is not an annotated tag"
 [[ "$(git rev-parse "${ref}^{commit}")" == "$(git rev-parse HEAD)" ]] || fail "${tag} does not point at HEAD"
-[[ -n "${RELEASE_TAG_KEYS:-}" ]] || fail "the repository variable RELEASE_TAG_KEYS (keys allowed to sign release tags) is not set"
+
+if [[ -z "${RELEASE_TAG_KEYS:-}" ]]; then
+    echo "::notice::RELEASE_TAG_KEYS is not set, so the tag signature is not checked"
+    echo "tag ${tag}: annotated, at HEAD, version ${version}, signature not checked"
+    exit 0
+fi
 
 home="$(mktemp -d)"
 trap 'rm -rf "${home}"' EXIT

@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
 #
-# Release. Pushing a signed tag v<version> is the manual gate: the tag is
-# verified (scripts/verify-release-tag.sh), every check runs again, the
+# Release. Pushing a tag v<version> is the manual gate: the tag is
+# verified (scripts/verify-release-tag.sh; its signature only when the
+# RELEASE_TAG_KEYS variable is set), every check runs again, the
 # artifacts are built in the build image, the checksums are signed keyless
 # with cosign, and a GitHub release is created. crates.io and the AUR are
 # published only when their secrets are configured (CARGO_REGISTRY_TOKEN,
