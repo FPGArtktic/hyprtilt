@@ -24,6 +24,7 @@ pub mod ipc;
 pub mod layout;
 pub mod lua;
 pub mod model;
+pub mod proc;
 pub mod profile;
 pub mod settings;
 pub mod version;
