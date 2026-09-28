@@ -1,0 +1,18 @@
+# Local notes that are not part of the project.
+.specstory/
+hyprtilt-brief.md
+CLAUDE.md
+# Build output.
+/target/
+/dist/
+/vendor/
+/site/
+*.profraw
+lcov.info
+coverage.json
+
+# Editors.
+*.swp
+*~
+.idea/
+.vscode/
