@@ -503,7 +503,7 @@ fn apply_field(rule: &mut MonitorRule, f: &Field) -> Result<(), String> {
         "mirror" => rule.mirror = Some(string(v, key)?),
         "bitdepth" => rule.bitdepth = Some(int_in(v, key, any)?),
         "cm" => rule.cm = Some(parse::<ColorManagement>(&string(v, key)?)?),
-        "sdr_eotf" => rule.sdr_eotf = Some(string(v, key)?),
+        "sdr_eotf" => rule.sdr_eotf = Some(sdr_eotf(&string(v, key)?)?),
         "sdrbrightness" => rule.sdrbrightness = Some(float(v, key)?),
         "sdrsaturation" => rule.sdrsaturation = Some(float(v, key)?),
         "sdr_min_luminance" => rule.sdr_min_luminance = Some(float(v, key)?),
@@ -532,6 +532,27 @@ fn apply_field(rule: &mut MonitorRule, f: &Field) -> Result<(), String> {
 fn parse<T: std::str::FromStr<Err = crate::model::InvalidValue>>(s: &str) -> Result<T, String> {
     s.parse()
         .map_err(|e: crate::model::InvalidValue| e.to_string())
+}
+
+/// A transfer function name, with the digits of Hyprland's `fromString`
+/// translated. Unknown names, which Hyprland silently turns into
+/// `default`, are refused.
+fn sdr_eotf(s: &str) -> Result<String, String> {
+    let name = match s {
+        "0" => "default",
+        "1" => "gamma22",
+        "2" => "gamma22force",
+        "3" => "srgb",
+        other => other,
+    };
+    if crate::model::SDR_EOTF_NAMES.contains(&name) {
+        Ok(name.to_owned())
+    } else {
+        Err(format!(
+            "invalid sdr_eotf: {s:?} (use {})",
+            crate::model::SDR_EOTF_NAMES.join(", ")
+        ))
+    }
 }
 
 /// A string value; integers are converted as Lua's `tostring` does.
@@ -848,6 +869,23 @@ mod tests {
         for &(src, message) in REJECTED {
             assert_eq!(error(src), message, "{src}");
         }
+    }
+
+    #[test]
+    fn sdr_eotf_digits_become_names() {
+        for (digit, name) in [
+            ("0", "default"),
+            ("1", "gamma22"),
+            ("2", "gamma22force"),
+            ("3", "srgb"),
+        ] {
+            let r = rule(&format!(
+                r#"hl.monitor({{ output = "a", sdr_eotf = "{digit}" }})"#
+            ));
+            assert_eq!(r.sdr_eotf.as_deref(), Some(name));
+        }
+        let r = rule(r#"hl.monitor({ output = "a", sdr_eotf = 3 })"#);
+        assert_eq!(r.sdr_eotf.as_deref(), Some("srgb"));
     }
 
     #[test]

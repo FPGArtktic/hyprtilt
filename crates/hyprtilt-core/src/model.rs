@@ -711,6 +711,12 @@ impl FromStr for ColorManagement {
     }
 }
 
+/// The transfer function names `sdr_eotf` accepts. hyprtilt stores these
+/// names only: the digit forms mean different functions in Lua and in
+/// hyprlang (`docs/hyprland-lua-api.md`, section 8.2), so each backend
+/// translates digits when it reads them.
+pub const SDR_EOTF_NAMES: &[&str] = &["default", "auto", "srgb", "gamma22", "gamma22force"];
+
 /// Reserved area in logical pixels (`reserved` in Lua, `addreserved` in
 /// hyprlang).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
