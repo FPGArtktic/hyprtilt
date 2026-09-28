@@ -21,6 +21,7 @@ pub mod fsio;
 pub mod geometry;
 pub mod hyprlang;
 pub mod ipc;
+pub mod layout;
 pub mod lua;
 pub mod model;
 pub mod profile;
