@@ -83,6 +83,57 @@ pkg-arch package="hyprtilt-git":
 srcinfo package="hyprtilt-git":
     cd packaging/aur/{{ package }} && makepkg --printsrcinfo > .SRCINFO
 
+# Generate the man page and shell completions into dist/assets/ with the
+# x86_64 release binary (the content is the same for every architecture).
+assets:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin="${CARGO_TARGET_DIR:-target}/x86_64-unknown-linux-musl/release/hyprtilt"
+    [[ -x "$bin" ]] || cargo build --release --locked --target x86_64-unknown-linux-musl -p hyprtilt
+    mkdir -p dist/assets
+    "$bin" man | gzip -9n > dist/assets/hyprtilt.1.gz
+    "$bin" completions bash > dist/assets/hyprtilt.bash
+    "$bin" completions zsh > dist/assets/_hyprtilt
+    "$bin" completions fish > dist/assets/hyprtilt.fish
+    ls -l dist/assets
+
+# Build .deb packages for amd64 and arm64 into dist/.
+pkg-deb: release-build assets
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for target in {{ release_targets }}; do
+        cargo deb --locked --no-build --no-strip -p hyprtilt --target "$target" --output dist/
+    done
+    ls -l dist/*.deb
+
+# Build .rpm packages for x86_64 and aarch64 into dist/.
+pkg-rpm: release-build assets
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for target in {{ release_targets }}; do
+        cargo generate-rpm -p crates/hyprtilt --target "$target" --target-dir "${CARGO_TARGET_DIR:-target}" -o dist/
+    done
+    ls -l dist/*.rpm
+
+# Clean distribution images for package installation tests, pinned by digest.
+deb_images := "docker.io/library/ubuntu:22.04@sha256:b8b6ee6aa931ecd9d0d952abc34dc0e5f7c6a30c6bb71b079fe399fde0329c02 docker.io/library/ubuntu:24.04@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3 docker.io/library/debian:bookworm@sha256:f37a335e82bca302e955fa39f9dfe28f1be618f016f8a2b56318e5a5111afc26"
+rpm_images := "docker.io/library/fedora:43@sha256:a651ddf48ea28a06ed4e1e6519f51c9f47e7a5a138722ade87369b8fbb7e5b42"
+
+# Install the amd64 .deb and the x86_64 .rpm from dist/ in clean containers (host, needs podman).
+pkg-test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    deb="$(ls dist/hyprtilt_*_amd64.deb)"
+    rpm="$(ls dist/hyprtilt-*.x86_64.rpm)"
+    for image in {{ deb_images }}; do
+        podman run --rm --security-opt label=disable -v "$PWD:/src:ro" "$image" \
+            bash /src/scripts/test-package-install.sh deb "/src/$deb"
+    done
+    for image in {{ rpm_images }}; do
+        podman run --rm --security-opt label=disable -v "$PWD:/src:ro" "$image" \
+            bash /src/scripts/test-package-install.sh rpm "/src/$rpm"
+    done
+
 # Build the build image.
 image:
     podman build -f containers/build/Containerfile -t {{ image }} .
