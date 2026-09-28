@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# GitHub issue form for bug reports.
+
+name: Bug report
+description: Report a problem with the hyprtilt terminal interface or command line.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        - **Security issues:** do not report them here. Follow the
+          [security policy](https://github.com/FPGArtktic/hyprtilt/blob/main/SECURITY.md).
+        - **Private data:** remove monitor serial numbers and paths you do
+          not want to publish from everything you paste below.
+
+  - type: checkboxes
+    id: search
+    attributes:
+      label: Existing issues
+      options:
+        - label: >-
+            I searched the [existing issues](https://github.com/FPGArtktic/hyprtilt/issues?q=is%3Aissue)
+            and found none about this problem.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: hyprtilt version
+      description: The output of `hyprtilt --version`.
+      placeholder: hyprtilt 0.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - AUR (hyprtilt-git)
+        - Release archive
+        - Debian package (.deb)
+        - RPM package (.rpm)
+        - cargo install
+        - Built from source
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: hyprland
+    attributes:
+      label: Hyprland version
+      description: The first line of `hyprctl version`.
+      placeholder: Hyprland 0.56.2 built from branch v0.56.2 at commit efb50993...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Configuration format
+      options:
+        - Lua (hyprland.lua)
+        - Lua, Caelestia (hypr-user.lua)
+        - hyprlang (hyprland.conf)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `hyprtilt doctor`
+      render: text
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: The managed block and any monitor rules outside it.
+      render: lua

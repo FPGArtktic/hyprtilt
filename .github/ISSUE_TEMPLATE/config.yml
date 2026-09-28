@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Issue template chooser: only the issue forms in this directory, plus links.
+# Security reports go through the private process in SECURITY.md.
+
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/FPGArtktic/hyprtilt/blob/main/SECURITY.md
+    about: >-
+      Do not open a public issue. Report vulnerabilities privately as
+      described in the security policy.
+  - name: Read the documentation
+    url: https://github.com/FPGArtktic/hyprtilt#readme
+    about: >-
+      Backends, the managed block, commands, exit codes and known
+      limitations.
