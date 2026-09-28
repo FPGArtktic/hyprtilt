@@ -206,14 +206,13 @@ hardware (listed in the
 > Nothing is released yet; the release packages below describe what every
 > release will provide.
 
-**Arch Linux (AUR).** [`packaging/aur/hyprtilt-git/`](packaging/aur/hyprtilt-git)
-builds the `main` branch, [`packaging/aur/hyprtilt/`](packaging/aur/hyprtilt)
-a release. Neither is published to the AUR yet; until then, build one from
-this repository:
+**Arch Linux (AUR).** [`hyprtilt`](https://aur.archlinux.org/packages/hyprtilt)
+builds the latest release,
+[`hyprtilt-git`](https://aur.archlinux.org/packages/hyprtilt-git) the `main`
+branch.
 
 ```sh
-git clone https://github.com/FPGArtktic/hyprtilt
-cd hyprtilt/packaging/aur/hyprtilt-git && makepkg -si
+paru -S hyprtilt        # or: yay -S hyprtilt
 ```
 
 **Debian, Ubuntu and derivatives.** A `.deb` is attached to every release;

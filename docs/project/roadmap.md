@@ -19,7 +19,7 @@ how to test it and which decisions were made.
 | 4. Apply and the rest of the TUI | Apply with countdown and rollback, modes, refresh rates, scale, VRR, snapping, profiles, adoption | :material-check-circle:{ style="color: #00c781" } done |
 | 5. CLI | All subcommands, `--json`, `--dry-run`, exit codes, man page, completions | :material-check-circle:{ style="color: #00c781" } done |
 | 6. Packaging and documentation | AUR, `.deb`, `.rpm`, release workflow, this site | :material-check-circle:{ style="color: #00c781" } done |
-| 7. Release | `v0.1.0`, checks on real hardware, demo GIF | :material-check-circle:{ style="color: #00c781" } done (AUR and crates.io await the maintainer) |
+| 7. Release | `v0.1.0`, checks on real hardware, demo GIF | :material-check-circle:{ style="color: #00c781" } done (crates.io on the next run) |
 
 ## Non-goals for 0.x
 

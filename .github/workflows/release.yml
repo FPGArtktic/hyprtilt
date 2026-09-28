@@ -6,8 +6,10 @@
 # RELEASE_TAG_KEYS variable is set), every check runs again, the
 # artifacts are built in the build image, the checksums are signed keyless
 # with cosign, and a GitHub release is created. crates.io and the AUR are
-# published only when their secrets are configured (CARGO_REGISTRY_TOKEN,
-# AUR_SSH_KEY with the variable AUR_HOST_KEY; scripts/publish-aur.sh).
+# published from here as well: crates.io through trusted publishing (no
+# secret, the job's OIDC token is exchanged for a short-lived one), and the
+# AUR when the AUR_SSH_KEY secret and the AUR_HOST_KEY variable are set
+# (scripts/publish-aur.sh).
 #
 # "Run workflow" (workflow_dispatch) is a dry run: it builds and checks
 # everything and keeps the artifacts, and publishes nothing.
@@ -18,6 +20,13 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      crates_tag:
+        description: >-
+          Publish this existing tag to crates.io (for example v0.1.0).
+          Leave it empty for a dry run that publishes nothing.
+        required: false
+        type: string
 
 permissions: {}
 
@@ -129,36 +138,43 @@ jobs:
 
   crates:
     name: crates.io
-    needs: publish
-    if: github.event_name == 'push'
+    needs: [build, publish]
+    # On a tag, after the release; on demand, for the tag given as input.
+    # always() keeps the skipped publish job from blocking the manual path.
+    if: >-
+      always() && needs.build.result == 'success'
+      && (github.event_name == 'push' || inputs.crates_tag != '')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
       packages: read
+      id-token: write # trusted publishing: exchange the OIDC token
     container:
       image: ghcr.io/fpgartktic/hyprtilt-build@sha256:c479dd766fe1014d09fc522ff6bc8a451a5eb31f062069be7297676641b81587
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    env:
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
       - name: Check out
-        if: env.CARGO_REGISTRY_TOKEN != ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.crates_tag || github.ref }}
           persist-credentials: false
 
+      # crates.io trusted publishing: the job's OIDC token is exchanged for
+      # a short-lived registry token, so no long-lived secret is stored.
+      - name: Get a crates.io token
+        id: auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+
       - name: Publish the crates
-        if: env.CARGO_REGISTRY_TOKEN != ''
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           cargo publish --locked -p hyprtilt-core
           cargo publish --locked -p hyprtilt
-
-      - name: Skipped
-        if: env.CARGO_REGISTRY_TOKEN == ''
-        run: echo "::notice::CARGO_REGISTRY_TOKEN is not set; crates.io was not published"
 
   aur:
     name: AUR

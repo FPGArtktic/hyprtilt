@@ -14,8 +14,7 @@ x86_64 and aarch64 Linux.
 
     The packages below are attached to
     [every release](https://github.com/FPGArtktic/hyprtilt/releases/latest);
-    `v0.1.0` is the current one. The AUR recipes are in the repository and
-    are not published to the AUR yet.
+    `v0.1.0` is the current one, and both AUR packages are published.
 
 ## Arch Linux (AUR)
 
@@ -23,10 +22,14 @@ Two recipes live in [`packaging/aur/`](https://github.com/FPGArtktic/hyprtilt/tr
 
 | Package | Builds |
 |---|---|
-| `hyprtilt` | the latest release, from the source archive of its tag |
-| `hyprtilt-git` | the `main` branch |
+| [`hyprtilt`](https://aur.archlinux.org/packages/hyprtilt) | the latest release, from the source archive of its tag |
+| [`hyprtilt-git`](https://aur.archlinux.org/packages/hyprtilt-git) | the `main` branch |
 
-Before they are published to the AUR, build one from the repository:
+```sh
+paru -S hyprtilt        # or: yay -S hyprtilt
+```
+
+To build a recipe straight from the repository instead:
 
 ```sh
 git clone https://github.com/FPGArtktic/hyprtilt
