@@ -195,6 +195,14 @@ pub enum ConfigError {
     NoBlock,
 }
 
+/// What the backends need to know about the target Hyprland when writing.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SaveOptions {
+    /// The running Hyprland version, if known. hyprlang fields that need a
+    /// newer version are refused; unknown means everything is allowed.
+    pub hyprland: Option<crate::version::Version>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
