@@ -4,3 +4,4 @@
 //! Reading and writing monitor rules in Lua configuration files.
 
 pub mod lexer;
+pub mod syntax;
