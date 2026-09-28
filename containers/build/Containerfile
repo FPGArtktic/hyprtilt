@@ -1,0 +1,155 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Build image for hyprtilt, based on Arch Linux.
+#
+# Build it with "just image" (from the repository root, which is the build
+# context). Every "just podman <target>" runs inside this image, and CI uses
+# the same image through "container:", so developer machines and CI share one
+# toolchain. Tools are downloaded only here, never while the project is built.
+#
+# Reproducibility comes from three pins:
+#
+#   * the dated archlinux:base-devel tag, pinned by digest;
+#   * the Arch Linux Archive snapshot of the same day: pacman installs every
+#     package from that immutable snapshot, never from a live mirror;
+#   * the Rust toolchain from rust-toolchain.toml, installed with rustup
+#     (not the Arch "rust" package, which follows the snapshot instead).
+#
+# The official Arch Linux image exists for x86_64 (linux/amd64) only, so this
+# image does too. aarch64 binaries are cross-compiled.
+#
+# The container runs as the invoking host user (podman --userns=keep-id),
+# who is "builder" (UID 1000) in the image. builder may run pacman through
+# sudo, which makepkg needs to install build dependencies. Cache directories
+# are world-writable (mode 1777) so fresh named volumes inherit a writable
+# mode for any UID.
+
+ARG ARCH_IMAGE_TAG=base-devel-20260920.0.596911
+ARG ARCH_IMAGE_DIGEST=sha256:8745817f349ed24373341ddb92776209eeec3f0364ea48f7f645ac5800d30a50
+ARG ARCH_ARCHIVE_DATE=2026/09/20
+
+FROM docker.io/library/archlinux:${ARCH_IMAGE_TAG}@${ARCH_IMAGE_DIGEST}
+
+ARG ARCH_IMAGE_TAG
+ARG ARCH_IMAGE_DIGEST
+ARG ARCH_ARCHIVE_DATE
+
+LABEL org.opencontainers.image.title="hyprtilt-build" \
+      org.opencontainers.image.description="Pinned build toolchain for hyprtilt" \
+      org.opencontainers.image.licenses="GPL-3.0-only" \
+      org.opencontainers.image.authors="Mateusz Okulanis <FPGArtktic@outlook.com>" \
+      org.opencontainers.image.url="https://github.com/FPGArtktic/hyprtilt" \
+      org.opencontainers.image.source="https://github.com/FPGArtktic/hyprtilt" \
+      org.opencontainers.image.base.name="docker.io/library/archlinux:${ARCH_IMAGE_TAG}" \
+      org.opencontainers.image.base.digest="${ARCH_IMAGE_DIGEST}" \
+      io.github.fpgartktic.hyprtilt.arch-archive-date="${ARCH_ARCHIVE_DATE}"
+
+# pacman configuration:
+#
+#   * The only server is the archive snapshot.
+#   * The download sandbox is disabled and downloads are not handed to the
+#     unprivileged "alpm" user. Both fail in some rootless container builds.
+#     Every package is still verified against its signature.
+#
+# The image ships public keys without a local master key, so a fresh master
+# key is created, the keyring is upgraded first, and the private key is
+# deleted afterwards. "-Suu" moves every package to the snapshot version.
+RUN set -euo pipefail; \
+    case "$ARCH_ARCHIVE_DATE" in \
+    [0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]) ;; \
+    *) echo "ARCH_ARCHIVE_DATE must be YYYY/MM/DD: $ARCH_ARCHIVE_DATE" >&2; exit 1 ;; \
+    esac; \
+    server="https://archive.archlinux.org/repos/${ARCH_ARCHIVE_DATE}"; \
+    printf 'Server = %s/$repo/os/$arch\n' "$server" > /etc/pacman.d/mirrorlist; \
+    sed -i 's/^[[:space:]]*DownloadUser[[:space:]]*=/#&/' /etc/pacman.conf; \
+    printf '\n[options]\nDisableSandbox\n' >> /etc/pacman.conf; \
+    test "$(pacman-conf --repo=core Server)" = "${server}/core/os/x86_64"; \
+    pacman-key --init; \
+    pacman-key --populate archlinux; \
+    pacman -Syy --noconfirm --needed archlinux-keyring; \
+    pacman -Suu --noconfirm; \
+    gpgconf --homedir /etc/pacman.d/gnupg --kill all; \
+    rm -rf /etc/pacman.d/gnupg/openpgp-revocs.d/* \
+      /etc/pacman.d/gnupg/private-keys-v1.d/* \
+      /etc/pacman.d/gnupg/S.* \
+      /var/cache/pacman/pkg/*
+
+# Tools from the snapshot:
+#
+#   rustup                      toolchains from rust-toolchain.toml
+#   aarch64-linux-gnu-gcc       cross linker for the aarch64 musl target
+#   just                        task runner, the same commands as on the host
+#   cargo-llvm-cov              coverage (uses llvm-tools-preview from rustup)
+#   cargo-deny, cargo-audit     licenses, advisories, duplicate dependencies
+#   cargo-deb, cargo-generate-rpm   .deb and .rpm packages
+#   namcap                      PKGBUILD and package lint
+#   git-cliff                   CHANGELOG.md from commit history
+#   vhs, ttyd, ffmpeg, chromium demo GIFs (vhs drives a headless browser)
+#   mkdocs-material             documentation site
+#   cosign, syft                release signatures and SBOM
+#   catatonit                   PID 1 that reaps zombies
+RUN set -euo pipefail; \
+    pacman -S --noconfirm --needed \
+      aarch64-linux-gnu-gcc cargo-audit cargo-deb cargo-deny \
+      cargo-generate-rpm cargo-llvm-cov catatonit chromium cosign ffmpeg \
+      git git-cliff just mkdocs-material namcap openssh python rustup \
+      sudo syft ttyd vhs; \
+    rm -rf /var/cache/pacman/pkg/*
+
+# The unprivileged user. With podman --userns=keep-id the host user maps to
+# UID 1000, which is this user. makepkg refuses to run as root, and installs
+# dependencies with "sudo pacman".
+RUN set -euo pipefail; \
+    useradd --create-home --uid 1000 --user-group builder; \
+    printf 'builder ALL=(root) NOPASSWD: /usr/bin/pacman\n' > /etc/sudoers.d/builder; \
+    chmod 0440 /etc/sudoers.d/builder; \
+    visudo -cf /etc/sudoers.d/builder
+
+# Rust toolchains, system-wide and read-only for users. The pinned toolchain
+# comes from rust-toolchain.toml; the MSRV toolchain is installed as well so
+# that "just msrv" works offline. RUST_MSRV must match rust-version in
+# Cargo.toml ("just msrv" fails otherwise); it is a build argument rather than
+# a copy of Cargo.toml so that unrelated manifest edits keep the image.
+#
+# The Arch rustup package provides the cargo and rustc proxies in /usr/bin.
+# The pinned toolchain is also the default, so tools work outside /src.
+ENV RUSTUP_HOME=/opt/rustup
+ARG RUST_MSRV=1.88
+COPY rust-toolchain.toml /tmp/toolchain/
+RUN set -euo pipefail; \
+    cd /tmp/toolchain; \
+    rustup toolchain install; \
+    pinned="$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)"; \
+    test -n "$pinned"; \
+    rustup toolchain install --profile minimal "$RUST_MSRV"; \
+    rustup default "$pinned"; \
+    rustup show; \
+    chmod -R a+rX /opt/rustup; \
+    rm -rf /tmp/toolchain
+
+# Cache locations, mounted as named volumes by "just podman". The paths must
+# match the volume mounts in the justfile.
+ENV CARGO_HOME=/cache/cargo \
+    CARGO_TARGET_DIR=/cache/target \
+    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-gnu-gcc
+RUN set -eu; \
+    install -d -m 1777 /cache /cache/cargo /cache/target; \
+    git config --system --add safe.directory /src; \
+    echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' \
+      >> /etc/ssh/ssh_known_hosts; \
+    chmod 0644 /etc/ssh/ssh_known_hosts
+
+# Prove that every tool is usable by the unprivileged user.
+RUN set -euo pipefail; \
+    setpriv --reuid=1000 --regid=1000 --clear-groups env HOME=/home/builder sh -euc ' \
+      cd /tmp; \
+      rustc --version; cargo --version; \
+      just --version; cargo llvm-cov --version; cargo deny --version; \
+      cargo deb --version; cargo generate-rpm --version; git-cliff --version; \
+      vhs --version; mkdocs --version; namcap --version 2>&1 | head -n 1 || true; \
+      aarch64-linux-gnu-gcc --version | head -n 1; \
+    '
+
+WORKDIR /src
+ENTRYPOINT ["/usr/bin/catatonit", "--"]
