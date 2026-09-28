@@ -25,10 +25,12 @@ test:
     cargo test --workspace --all-targets --locked
     cargo test --workspace --doc --locked
 
-# Check formatting and run clippy with warnings as errors.
+# Check formatting, run clippy with warnings as errors, lint scripts and workflows.
 lint:
     cargo fmt --all -- --check
     cargo clippy --workspace --all-targets --locked -- -D warnings
+    shellcheck scripts/*.sh
+    actionlint
 
 # Build the API documentation with warnings as errors.
 doc:

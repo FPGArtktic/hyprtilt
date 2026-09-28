@@ -88,13 +88,14 @@ RUN set -euo pipefail; \
 #   vhs, ttyd, ffmpeg, chromium demo GIFs (vhs drives a headless browser)
 #   mkdocs-material             documentation site
 #   cosign, syft                release signatures and SBOM
+#   shellcheck, actionlint      lint of scripts and GitHub workflows
 #   catatonit                   PID 1 that reaps zombies
 RUN set -euo pipefail; \
     pacman -S --noconfirm --needed \
-      aarch64-linux-gnu-gcc cargo-audit cargo-deb cargo-deny \
+      aarch64-linux-gnu-gcc actionlint cargo-audit cargo-deb cargo-deny \
       cargo-generate-rpm cargo-llvm-cov catatonit chromium cosign ffmpeg \
       git git-cliff just mkdocs-material namcap openssh python rustup \
-      sudo syft ttyd vhs; \
+      shellcheck sudo syft ttyd vhs; \
     rm -rf /var/cache/pacman/pkg/*
 
 # The unprivileged user. With podman --userns=keep-id the host user maps to
@@ -147,7 +148,8 @@ RUN set -euo pipefail; \
       rustc --version; cargo --version; \
       just --version; cargo llvm-cov --version; cargo deny --version; \
       cargo deb --version; cargo generate-rpm --version; git-cliff --version; \
-      vhs --version; mkdocs --version; namcap --version 2>&1 | head -n 1 || true; \
+      vhs --version; mkdocs --version; shellcheck --version | grep ^version; \
+      actionlint --version | head -n 1; namcap --version 2>&1 | head -n 1 || true; \
       aarch64-linux-gnu-gcc --version | head -n 1; \
     '
 
