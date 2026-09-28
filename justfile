@@ -71,6 +71,18 @@ release-build:
     done
     file dist/*/hyprtilt 2>/dev/null || true
 
+# Pinned clean Arch Linux image for package tests (same pins as the build image).
+arch_image := "docker.io/library/archlinux:base-devel-20260920.0.596911@sha256:8745817f349ed24373341ddb92776209eeec3f0364ea48f7f645ac5800d30a50"
+
+# Build and test the AUR recipe (default hyprtilt-git) in a clean Arch Linux container.
+pkg-arch package="hyprtilt-git":
+    podman run --rm --security-opt label=disable -v "$PWD:/src:ro" {{ arch_image }} \
+        bash /src/scripts/test-aur-package.sh {{ package }}
+
+# Regenerate .SRCINFO of an AUR recipe (needs makepkg, e.g. in the build image).
+srcinfo package="hyprtilt-git":
+    cd packaging/aur/{{ package }} && makepkg --printsrcinfo > .SRCINFO
+
 # Build the build image.
 image:
     podman build -f containers/build/Containerfile -t {{ image }} .
