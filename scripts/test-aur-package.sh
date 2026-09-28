@@ -8,15 +8,17 @@
 #   * .SRCINFO must match the recipe;
 #   * namcap checks the recipe and the package;
 #   * makepkg -s builds the committed HEAD of the repository mounted at
-#     /src (the recipe's source is pointed at it, so unpushed commits are
-#     tested, uncommitted changes are not), runs check() and packages it;
+#     /src (the recipe's source is pointed at it, or for a release recipe
+#     at an archive of it, so unpushed commits are tested, uncommitted
+#     changes are not), runs check() and packages it;
 #   * the package is installed with pacman -U and its files are checked.
 #
 # Run it through "just pkg-arch", which starts the container. Inside the
 # container it runs as root, prepares an unprivileged user and re-runs
 # itself as that user for the makepkg part.
 #
-# Usage: scripts/test-aur-package.sh [package]   (default: hyprtilt-git)
+# Usage: scripts/test-aur-package.sh [package]   (hyprtilt-git or hyprtilt;
+#                                                default: hyprtilt-git)
 
 set -euo pipefail
 
@@ -43,12 +45,26 @@ trap 'rm -rf "${work}"' EXIT
 echo "==> .SRCINFO is up to date"
 (cd "${recipe}" && diff -u .SRCINFO <(makepkg --printsrcinfo))
 
-echo "==> namcap on the recipe"
-namcap "${recipe}/PKGBUILD" | tee "${work}/namcap-pkgbuild.txt"
-
 echo "==> makepkg -s from ${src}"
 cp "${recipe}/PKGBUILD" "${work}/"
-sed -i "s|^source=(.*|source=(\"\${_pkgname}::git+file://${src}\")|" "${work}/PKGBUILD"
+if [[ "${pkg}" == *-git ]]; then
+    sed -i "s|^source=(.*|source=(\"\${_pkgname}::git+file://${src}\")|" "${work}/PKGBUILD"
+else
+    # The release archive does not exist yet: make it from HEAD the way
+    # GitHub makes the archive of a tag.
+    version="$(sed -n 's/^pkgver=//p' "${work}/PKGBUILD")"
+    archive="${pkg}-${version}.tar.gz"
+    git -C "${src}" archive --format=tar.gz --prefix="${pkg}-${version}/" \
+        --output="${work}/${archive}" HEAD
+    sum="$(sha256sum "${work}/${archive}" | cut -d ' ' -f 1)"
+    sed -i -e "s|^source=(.*|source=(\"${archive}\")|" \
+        -e "s|^sha256sums=(.*|sha256sums=('${sum}')|" "${work}/PKGBUILD"
+fi
+
+# The recipe as built: a release recipe keeps SKIP until its release exists.
+echo "==> namcap on the recipe"
+namcap "${work}/PKGBUILD" | tee "${work}/namcap-pkgbuild.txt"
+
 (cd "${work}" && makepkg --syncdeps --noconfirm --cleanbuild --noprogressbar)
 
 package="$(find "${work}" -maxdepth 1 -name "${pkg}-*.pkg.tar.zst" ! -name "${pkg}-debug-*" | head -n 1)"

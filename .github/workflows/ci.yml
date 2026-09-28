@@ -287,9 +287,13 @@ jobs:
           bash scripts/test-package-install.sh "$KIND" "$(ls "$PWD"/dist/$FILE)"
 
   aur:
-    name: AUR recipe hyprtilt-git
+    name: AUR recipe ${{ matrix.package }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [hyprtilt-git, hyprtilt]
     container:
       image: docker.io/library/archlinux:base-devel-20260920.0.596911@sha256:8745817f349ed24373341ddb92776209eeec3f0364ea48f7f645ac5800d30a50
     steps:
@@ -307,4 +311,5 @@ jobs:
       - name: makepkg, namcap, install
         env:
           HYPRTILT_SRC: ${{ github.workspace }}
-        run: bash scripts/test-aur-package.sh hyprtilt-git
+          PACKAGE: ${{ matrix.package }}
+        run: bash scripts/test-aur-package.sh "$PACKAGE"
