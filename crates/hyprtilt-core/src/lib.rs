@@ -16,6 +16,7 @@ pub mod apply;
 pub mod block;
 mod body;
 pub mod config;
+pub mod doctor;
 pub mod document;
 pub mod fsio;
 pub mod geometry;
