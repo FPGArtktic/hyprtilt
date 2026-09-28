@@ -90,6 +90,8 @@ pub struct ManagedBlock {
     pub end_line: usize,
     /// The rules in the block, in order.
     pub rules: Vec<MonitorRule>,
+    /// 1-based line where each rule starts, parallel to `rules`.
+    pub rule_lines: Vec<usize>,
 }
 
 /// Everything a backend knows about a file.
@@ -225,6 +227,7 @@ mod tests {
                 begin_line: 1,
                 end_line: 2,
                 rules: vec![MonitorRule::new("DP-1")],
+                rule_lines: vec![2],
             }),
             outside: vec![
                 found("DP-1", true),

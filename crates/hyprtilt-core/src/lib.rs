@@ -13,6 +13,7 @@
 
 pub mod apply;
 pub mod block;
+mod body;
 pub mod config;
 pub mod document;
 pub mod fsio;

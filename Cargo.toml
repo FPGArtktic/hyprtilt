@@ -30,6 +30,9 @@ cast_precision_loss = "allow"
 cast_sign_loss = "allow"
 cast_possible_wrap = "allow"
 module_name_repetitions = "allow"
+# Tests quote Lua and hyprlang snippets full of double quotes; one style of
+# raw string for all of them reads better than the minimal number of hashes.
+needless_raw_string_hashes = "allow"
 
 [profile.release]
 lto = true

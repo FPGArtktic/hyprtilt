@@ -23,6 +23,21 @@ const KEYWORDS: &[&str] = &[
     "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
 ];
 
+/// Whether `s` is a Lua reserved word.
+///
+/// # Examples
+///
+/// ```
+/// use hyprtilt_core::lua::lexer::is_keyword;
+///
+/// assert!(is_keyword("return"));
+/// assert!(!is_keyword("output"));
+/// ```
+#[must_use]
+pub fn is_keyword(s: &str) -> bool {
+    KEYWORDS.contains(&s)
+}
+
 /// Lua symbols, longest first so that the lexer matches greedily.
 const SYMBOLS: &[&str] = &[
     "...", "..", "==", "~=", "<=", ">=", "<<", ">>", "//", "::", "+", "-", "*", "/", "%", "^", "#",
