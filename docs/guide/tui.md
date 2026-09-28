@@ -10,22 +10,9 @@ description: The keys and screens of hyprtilt's terminal interface.
 `hyprtilt` without a subcommand opens the interface. It edits the rules of
 the managed block and shows the result before anything reaches Hyprland.
 
-```text
- hyprtilt ~/.config/caelestia/hypr-user.lua (lua)  [modified]
-┌ Layout ─────────────────────────────────────────┐┌ Monitor ───────────────────┐
-│ ┌─────────────┐                                 ││DP-1  3 of 3                │
-│ │  HDMI-A-1   │                                 ││Mode      2560x1440         │
-│ │  2560x1440  │                                 ││Refresh   164.98 Hz  [ ]    │
-│ │   144 Hz    │              ┏━━━━━━━━━━━━━━━━━┓││Rates     59.95 120 164.98  │
-│ │     90°     │┌───────────┐ ┃      DP-1       ┃││          179.95            │
-│ │             ││   eDP-1   │ ┃    2560x1440    ┃││Position  3360, 975         │
-│ │             ││ 1920x1080 │ ┃    164.98 Hz    ┃││Scale     1 (2560x1440)     │
-│ │             ││  144 Hz   │ ┃                 ┃││Rotation  0°                │
-│ └─────────────┘└───────────┘ ┗━━━━━━━━━━━━━━━━━┛││Rule      line 8, edited    │
-└─────────────────────────────────────────────────┘└────────────────────────────┘
- DP-1: 164.98 Hz
- Tab select  hjkl move  r rotate  m mode  [ ] Hz  s scale  a apply  w write  ? help
-```
+![A session: adopting the rules, changing the refresh rate, rotating, aligning, applying live and writing the file](../assets/demo.gif)
+
+![The terminal interface with three monitors; DP-1 is selected and its refresh rate lowered to 120 Hz](../assets/screenshots/refresh.png)
 
 - **Layout** draws the enabled monitors to scale in logical pixels, with
   their name, resolution, refresh rate, rotation and scale. The selected
@@ -67,7 +54,9 @@ Below 80 columns the monitor panel moves under the layout.
 | ++question++ | help |
 | ++q++, ++esc++ | quit |
 
-The same table is in the help popup (++question++).
+The same table is in the help popup (++question++):
+
+![The help popup](../assets/screenshots/help.png)
 
 ### Moving and snapping
 
@@ -85,6 +74,8 @@ offers for its current resolution, from the list Hyprland reports. The
 status line names the new rate; at the lowest or highest rate it says so.
 ++m++ shows every mode, and `preferred`, `highrr` and `highres`.
 
+![The mode list of DP-1](../assets/screenshots/modes.png)
+
 ### Scale
 
 ++s++ lists the scales between 0.5 and 3 that divide the resolution into
@@ -97,15 +88,7 @@ the logical size each gives, and `auto`.
 (a backup first) and reloads. Both check that Hyprland shows what was
 asked, then count down:
 
-```text
-┌ Apply ─────────────────────────────┐
-│Keep this layout?                   │
-│                                    │
-│Reverting in 12 s                   │
-│                                    │
-│y or Enter keep   n or Esc revert   │
-└────────────────────────────────────┘
-```
+![The countdown after a live change](../assets/screenshots/countdown.png)
 
 Without an answer the previous layout comes back, and for ++w++ the previous
 file too. A write of the layout Hyprland already runs (for example right

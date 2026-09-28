@@ -55,6 +55,9 @@ After a successful check, hyprtilt asks whether to keep the layout and
 counts down, 15 seconds by default:
 
 - In the interface: ++y++ or ++enter++ keeps it, ++n++ or ++esc++ reverts it.
+
+    ![The countdown after a live change](../assets/screenshots/countdown.png)
+
 - On the command line (`apply`): type `y` and ++enter++; anything else, the
   end of the input or the timeout reverts it.
 

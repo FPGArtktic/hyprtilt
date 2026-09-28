@@ -41,7 +41,8 @@ decision are in [ADR 0001](../adr/0001-architecture.md).
 ## Trying the interface without Hyprland
 
 The hidden option `--fake-hyprland SETUP.json` replaces the compositor with
-an in-memory one. `demo/` holds a setup with three monitors:
+an in-memory one. `demo/` holds a setup with three monitors; `just media`
+records the screenshots and the demo GIF of this site from it:
 
 ```sh
 cp -r demo /tmp/hyprtilt-demo

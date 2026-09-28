@@ -37,7 +37,12 @@ DP-1      on     2560x1440@179.95  3360x975   1      0°         none
 ## 3. Adopt the rules you already have
 
 hyprtilt only edits the lines between its markers. `adopt` moves the rules
-you wrote into a new managed block, keeping their text:
+you wrote into a new managed block, keeping their text. The interface
+offers the same when it starts:
+
+![The interface offers to adopt three rules found outside the block](../assets/screenshots/adopt.png)
+
+On the command line:
 
 ```sh
 hyprtilt adopt --dry-run   # shows the diff

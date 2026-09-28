@@ -45,6 +45,15 @@ return {} -- the block always goes before a top-level return
 </div>
 </div>
 
+## See it work { .ht-section-title }
+
+<p class="ht-section-lead">
+Adopting hand-written rules, changing the refresh rate, rotating and
+aligning, then applying live and writing the file, each confirmed.
+</p>
+
+![A hyprtilt session in the terminal](assets/demo.gif)
+
 ## Why hyprtilt { .ht-section-title }
 
 <p class="ht-section-lead">

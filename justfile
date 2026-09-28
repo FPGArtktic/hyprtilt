@@ -155,10 +155,10 @@ pkg-test:
 dist: pkg-deb pkg-rpm
     scripts/dist.sh
 
-# Record the demo GIF of the terminal interface into docs/assets/demo.gif (needs vhs).
-demo:
+# Record the screenshots and the demo GIF of the documentation from the real binary.
+media:
     cargo build --release --locked -p hyprtilt
-    vhs docs/demo.tape
+    uv run --no-project --with pyte==0.8.2 --with pillow==12.3.0 python3 scripts/docs-media.py
 
 # Changelog in Keep a Changelog form from the commit history.
 changelog:

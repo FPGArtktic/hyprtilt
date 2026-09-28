@@ -72,6 +72,8 @@ truth.
 - Changes are verified against the live state over Hyprland's IPC, and are
   rolled back unless you confirm them.
 
+![A hyprtilt session: adopting the rules, changing the refresh rate, rotating, aligning, applying live and writing the file](docs/assets/demo.gif)
+
 ## How it works
 
 ```lua

@@ -4,7 +4,8 @@
 # Demo setup
 
 An in-memory Hyprland for trying hyprtilt without a compositor, and for
-recording the demo GIF (`just demo`, which runs `docs/demo.tape`).
+recording the screenshots and the demo GIF of the documentation
+(`just media`, which runs `scripts/docs-media.py`).
 
 - `fake.json`: Hyprland 0.56.2 with a Lua configuration and three monitors
   (the maintainer's desk: a portrait 1440p monitor, a laptop panel and a
