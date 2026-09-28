@@ -264,6 +264,27 @@ fn adopt_selected_lines_merges_and_refuses() {
 }
 
 #[test]
+fn adopt_does_not_move_rules_across_a_conditional_one() {
+    let src = "hl.monitor({ output = \"a\" })\nif x then hl.monitor({ output = \"a\", scale = 2 }) end\nhl.monitor({ output = \"a\", vrr = 1 })\n";
+    assert_eq!(
+        adopt(src, &[]).unwrap_err(),
+        ConfigError::AdoptCrossing { line: 2 }
+    );
+    // Only the rule after it can be adopted without crossing it.
+    let edit = adopt(src, &[3]).unwrap();
+    assert!(
+        edit.content
+            .starts_with("hl.monitor({ output = \"a\" })\nif x then")
+    );
+    // With a block, rules on the other side of it cannot move into it.
+    let src = "hl.monitor({ output = \"a\" })\nhl.monitor(t)\n-- BEGIN hyprtilt (managed)\n-- END hyprtilt\n";
+    assert_eq!(
+        adopt(src, &[]).unwrap_err(),
+        ConfigError::AdoptCrossing { line: 2 }
+    );
+}
+
+#[test]
 fn adopt_into_an_existing_block_respects_order() {
     let src = "hl.monitor({ output = \"a\", scale = 2, vrr = 1 })\n-- BEGIN hyprtilt (managed)\nhl.monitor({ output = \"a\", scale = 1 })\n-- END hyprtilt\nhl.monitor({ output = \"b\", scale = 1 })\nhl.monitor({ output = \"a\", transform = 1 })\n";
     let edit = adopt(src, &[]).unwrap();

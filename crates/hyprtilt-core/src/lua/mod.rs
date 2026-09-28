@@ -20,6 +20,7 @@ pub mod syntax;
 
 use std::fmt::Write as _;
 
+use crate::adopt::{self, check_unique};
 use crate::block::{self, BlockLocation, LUA_MARKERS};
 use crate::body::{self, Item, Piece};
 use crate::document::{ConfigDocument, ConfigError, Edit, FoundRule, ManagedBlock};
@@ -114,13 +115,15 @@ pub fn save(src: &str, rules: &[MonitorRule]) -> Result<Edit, ConfigError> {
 /// ```
 pub fn adopt(src: &str, lines: &[usize]) -> Result<Edit, ConfigError> {
     let a = analyze(src)?;
-    let selected = select(&a.doc.outside, lines)?;
+    let selected = adopt::select(&a.doc.outside, lines)?;
     if selected.is_empty() {
         return Ok(Edit::new(src, src.to_owned()));
     }
-    let without = remove_spans(src, &selected);
-    if let Some(location) = &a.location {
-        let rules = merge_into_block(a.doc.block_rules(), &selected, location);
+    let block_start = a.location.as_ref().map(|l| l.span.start);
+    adopt::check_crossing(&a.doc.outside, &selected, block_start)?;
+    let without = adopt::remove_spans(src, &selected);
+    if let Some(start) = block_start {
+        let rules = adopt::merge_into_block(a.doc.block_rules(), &selected, start, adopt::overlay);
         let edit = save(&without, &rules)?;
         return Ok(Edit::new(src, edit.content));
     }
@@ -611,136 +614,19 @@ fn new_block_position(
     Ok(src.len())
 }
 
-fn select<'d>(
-    outside: &'d [FoundRule],
-    lines: &[usize],
-) -> Result<Vec<&'d FoundRule>, ConfigError> {
-    if lines.is_empty() {
-        return Ok(outside.iter().filter(|f| f.is_adoptable()).collect());
-    }
-    let mut selected = Vec::new();
-    for &line in lines {
-        let found =
-            outside
-                .iter()
-                .find(|f| f.line == line)
-                .ok_or_else(|| ConfigError::NotAdoptable {
-                    line,
-                    reason: "no monitor rule starts on this line".to_owned(),
-                })?;
-        if let Some(reason) = &found.not_adoptable {
-            return Err(ConfigError::NotAdoptable {
-                line,
-                reason: reason.clone(),
-            });
-        }
-        selected.push(found);
-    }
-    selected.sort_by_key(|f| f.span.start);
-    selected.dedup_by_key(|f| f.span.start);
-    Ok(selected)
-}
-
-/// `src` without the removal spans of `rules` (which are sorted and do not
-/// overlap).
-fn remove_spans(src: &str, rules: &[&FoundRule]) -> String {
-    let mut out = String::with_capacity(src.len());
-    let mut at = 0;
-    for f in rules {
-        out.push_str(&src[at..f.span.start]);
-        at = f.span.end;
-    }
-    out.push_str(&src[at..]);
-    out
-}
-
-/// The block's rules after adopting `selected`: a rule before the block is
-/// overridden by the block's rule for the same selector, a rule after it
-/// overrides the block's rule, exactly as Hyprland evaluates them.
-fn merge_into_block(
-    block_rules: &[MonitorRule],
-    selected: &[&FoundRule],
-    location: &BlockLocation,
-) -> Vec<MonitorRule> {
-    let mut rules = merge_in_order(block_rules.iter().cloned());
-    let mut earlier = Vec::new();
-    for found in selected {
-        let Some(rule) = found.rule.clone() else {
-            continue;
-        };
-        let existing = rules.iter_mut().find(|b| b.output == rule.output);
-        match (found.span.end <= location.span.start, existing) {
-            (true, Some(block_rule)) => {
-                let mut merged = rule;
-                merged.overlay(block_rule);
-                *block_rule = merged;
-            }
-            (true, None) => earlier.push(rule),
-            (false, Some(block_rule)) => block_rule.overlay(&rule),
-            (false, None) => rules.push(rule),
-        }
-    }
-    let mut all = merge_in_order(earlier);
-    all.extend(rules);
-    all
-}
-
-/// Merge rules with the same selector the way Hyprland's rule list does:
-/// the merged rule takes the position of the later one.
-fn merge_in_order(rules: impl IntoIterator<Item = MonitorRule>) -> Vec<MonitorRule> {
-    let mut out: Vec<MonitorRule> = Vec::new();
-    for rule in rules {
-        match out.iter().position(|r| r.output == rule.output) {
-            Some(i) => {
-                let mut merged = out.remove(i);
-                merged.overlay(&rule);
-                out.push(merged);
-            }
-            None => out.push(rule),
-        }
-    }
-    out
-}
-
-fn check_unique(rules: &[MonitorRule]) -> Result<(), ConfigError> {
-    for (i, rule) in rules.iter().enumerate() {
-        if rules[..i].iter().any(|r| r.output == rule.output) {
-            return Err(ConfigError::Unrepresentable {
-                output: rule.output.to_string(),
-                message: "more than one rule for the same output".to_owned(),
-            });
-        }
-    }
-    Ok(())
-}
-
 /// Read the new content back and check that its block holds exactly the
 /// requested rules. This guards against writing a file that does not say
 /// what hyprtilt meant.
 fn verify(content: &str, rules: &[MonitorRule]) -> Result<(), ConfigError> {
-    let internal = |output: &str, what: &str| ConfigError::Unrepresentable {
-        output: output.to_owned(),
-        message: format!("{what} (this is a bug in hyprtilt; nothing was written)"),
-    };
     let doc = analyze(content)
-        .map_err(|e| internal("", &format!("the new content does not read back: {e}")))?
+        .map_err(|e| ConfigError::Unrepresentable {
+            output: String::new(),
+            message: format!(
+                "the new content does not read back: {e} (this is a bug in hyprtilt; nothing was written)"
+            ),
+        })?
         .doc;
-    let got = doc.block_rules();
-    if got.len() != rules.len() {
-        return Err(internal("", "the block does not hold the requested rules"));
-    }
-    for rule in rules {
-        let ok = got
-            .iter()
-            .any(|g| g.output == rule.output && (g == rule || *g == rule.normalized()));
-        if !ok {
-            return Err(internal(
-                rule.output.as_str(),
-                "the rule does not read back as written",
-            ));
-        }
-    }
-    Ok(())
+    adopt::verify(doc.block_rules(), rules, &MonitorRule::normalized)
 }
 
 #[cfg(test)]

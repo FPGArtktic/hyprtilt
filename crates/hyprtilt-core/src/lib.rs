@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+mod adopt;
 pub mod apply;
 pub mod block;
 mod body;

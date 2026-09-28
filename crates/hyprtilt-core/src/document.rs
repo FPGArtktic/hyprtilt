@@ -190,6 +190,18 @@ pub enum ConfigError {
         /// Why.
         reason: String,
     },
+    /// `adopt` would move rules past a rule that stays outside the block
+    /// and may concern the same monitor, which could change which rule
+    /// wins.
+    #[error(
+        "line {line}: this monitor rule stays outside the block but sits between rules \
+         being adopted, and moving them past it could change which rule wins; adopt the \
+         rules on each side of it separately, or move it by hand"
+    )]
+    AdoptCrossing {
+        /// 1-based line of the rule in the way.
+        line: usize,
+    },
     /// `unmanage` on a file without a block.
     #[error("the file has no managed block")]
     NoBlock,
