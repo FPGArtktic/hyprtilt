@@ -11,6 +11,7 @@ mod context;
 mod error;
 mod exit;
 mod run;
+mod tui;
 
 use std::io::Write;
 use std::process::ExitCode;
@@ -53,9 +54,7 @@ fn dispatch(cli: Cli) -> Result<(), AppError> {
     }
     let ctx = Context::new(cli.global)?;
     let Some(command) = cli.command else {
-        return Err(AppError::Other(
-            "the terminal interface is not implemented yet".to_owned(),
-        ));
+        return tui::run(&ctx);
     };
     match command {
         Command::List => list::run(&ctx),

@@ -88,6 +88,11 @@ impl Context {
             .map_err(|e| AppError::Ipc(e.clone()))
     }
 
+    /// Hyprland's event socket, if it runs.
+    pub(crate) fn event_socket(&self) -> Option<PathBuf> {
+        self.instance.as_ref().map(Instance::event_socket)
+    }
+
     /// What `/proc` shows about the compositor.
     pub(crate) fn process(&self) -> Option<ProcessInfo> {
         let pid = self.instance.as_ref()?.pid?;
