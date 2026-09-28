@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Weekly checks that depend on the outside world rather than on a change
+# in this repository:
+#
+#   * cargo audit against the current RustSec advisory database;
+#   * the hyprtilt-git AUR recipe built with makepkg on current Arch Linux
+#     (the recipe follows main, and Arch's Rust toolchain moves).
+name: weekly
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  audit:
+    name: cargo audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/fpgartktic/hyprtilt-build@sha256:c479dd766fe1014d09fc522ff6bc8a451a5eb31f062069be7297676641b81587
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Audit dependencies
+        run: cargo audit --deny warnings
+
+  aur-git:
+    name: makepkg hyprtilt-git on current Arch Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    container:
+      # Deliberately the moving tag: this job tests today's Arch Linux.
+      image: docker.io/library/archlinux:base-devel
+    steps:
+      - name: Install git
+        run: pacman -Syu --noconfirm --needed git
+
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: makepkg, namcap, install
+        env:
+          HYPRTILT_SRC: ${{ github.workspace }}
+        run: bash scripts/test-aur-package.sh hyprtilt-git
