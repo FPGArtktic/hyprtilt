@@ -1,5 +1,5 @@
 ---
-title: hyprtilt
+title: Monitor layout for Hyprland, in your own config
 description: Keyboard-first TUI and CLI for Hyprland monitor layout that edits your Lua or hyprlang configuration in place.
 hide:
   - navigation

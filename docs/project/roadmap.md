@@ -13,7 +13,7 @@ how to test it and which decisions were made.
 | Stage | Scope | State |
 |---|---|---|
 | 0. Bootstrap | Cargo workspace, pinned build image, `justfile`, CI, contribution rules | :material-check-circle:{ style="color: #00c781" } done |
-| 1. Research and design | Verified notes on Hyprland's Lua API, architecture decision record | :material-progress-clock: in progress |
+| 1. Research and design | [Verified notes on Hyprland's Lua API](../hyprland-lua-api.md), [architecture decision record](../adr/0001-architecture.md) | :material-check-circle:{ style="color: #00c781" } done (ADR proposed) |
 | 2. Core and `list` | Monitor model, geometry, Lua and hyprlang managed blocks, IPC, `list`, `doctor` | :material-progress-clock: in progress |
 | 3. TUI | Canvas, selection, moving, rotation, details panel, saving the block | :material-circle-outline: planned |
 | 4. Apply and the rest of the TUI | Apply with countdown and rollback, modes, scale, VRR, snapping, profiles, adoption | :material-circle-outline: planned |

@@ -125,5 +125,8 @@ validation:
 
 nav:
   - Home: index.md
+  - Design:
+      - Architecture (ADR 0001): adr/0001-architecture.md
+      - Hyprland API notes: hyprland-lua-api.md
   - Project:
       - Roadmap: project/roadmap.md

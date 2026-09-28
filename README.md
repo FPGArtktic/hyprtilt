@@ -10,7 +10,8 @@ One static Rust binary, no daemon.
 
 > **Status: under construction.** Nothing is released yet. The design is in
 > [`docs/adr/`](docs/adr/) and the verified Hyprland API notes are in
-> [`docs/hyprland-lua-api.md`](docs/hyprland-lua-api.md).
+> [`docs/hyprland-lua-api.md`](docs/hyprland-lua-api.md). Documentation:
+> <https://hyprtilt.readthedocs.io>.
 
 ## Contributing
 
