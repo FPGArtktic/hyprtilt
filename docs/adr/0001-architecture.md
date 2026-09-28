@@ -406,7 +406,8 @@ count, confirmation timeout, snapping default).
 
 Subcommands as in the brief: `list`, `rotate`, `move`, `scale`, `mode`,
 `enable`, `disable`, `apply`, `save`, `adopt`, `unmanage`, `profile`,
-`doctor`, `completions`, `man`. The per-output commands change the managed
+`doctor`, `completions`, `man`, and `refresh` (the maintainer's request:
+change the refresh rate and keep the resolution). The per-output commands change the managed
 block and reload, which is what a keybinding needs; `--live` changes only the
 running session. Every state-changing command supports `--dry-run` (prints
 the file diff or the IPC requests) and `--json` where it prints data. Exit
@@ -431,7 +432,8 @@ writes) go through the core. This keeps the TUI testable with
 `ratatui::backend::TestBackend`. Layout at 80×24: canvas on the left,
 details panel on the right (below the canvas when narrower than 80 columns),
 status line at the bottom. Keys follow the brief (hjkl and arrows, `Tab`,
-`r`/`R`/`f`, `m`/`s`/`v`/`e`, `a`, `w`, `u`, `?`, `q`); mouse is optional.
+`r`/`R`/`f`, `m`/`s`/`v`/`e`, `a`, `w`, `u`, `?`, `q`), plus `[`/`]` for the
+refresh rate; mouse is optional.
 
 ### D15. Dependencies
 
@@ -481,6 +483,49 @@ older LTS releases), Fedora an `.rpm` from `cargo-generate-rpm`.
 
 GPL-3.0-only, as in `lazysubmodules`. MSRV 1.88 (edition 2024, let-chains);
 checked in CI with the MSRV toolchain from the build image.
+
+## Implementation notes
+
+Decisions made while implementing stages 2 to 6 (2026-09-28), within the
+decisions above.
+
+- **Interface split.** `App` turns keys into edits or an `Effect`; a
+  controller carries effects out through the apply state machine with a
+  clock passed in; the view draws. The event loop only moves events, so the
+  interface runs in tests without a terminal or a compositor.
+- **Per-output commands** verify without a confirmation prompt (they are
+  for keybindings) and roll back when Hyprland does not show the change
+  (exit 6). A failed rollback exits with 1.
+- **Overlaps** are refused by every command and by `a`/`w` (exit 4); gaps,
+  adjusted scales and unlisted modes are warnings.
+- **Refresh rates** snap to the nearest listed rate within 1 Hz for the
+  current resolution; otherwise the rate is written as asked and a warning
+  says Hyprland will try a custom mode. Hz is always written into the mode.
+- **Rotation** adds one quarter turn to the transform (`r`, `rotate 90`),
+  keeping the flip; the on-screen direction awaits the runtime check of
+  API §13, item 1. Outputs that touched the rotated one move with its edge.
+- **Live changes** send complete rules (every field hyprtilt owns), because
+  Lua merges rules for the same output. They are undone by sending the
+  previous live state; `--live` per-output commands are undone by a reload.
+- **A write of the running layout** (for example after a kept live change)
+  is verified but not counted down.
+- **Without Hyprland**, `list`, `doctor`, `adopt`, `unmanage`, `--dry-run`
+  and the interface still work (layouts come from the block's rules that
+  name a resolution); commands that need the live state exit with 3.
+- **Disabled hyprlang rules** are written as `monitor = SEL, disable`, which
+  drops the rule's other fields, as Hyprland does.
+- **Adopting in hyprlang** puts the block where the last adopted rule was
+  and refuses to move a rule across a rule that stays outside and could
+  interact with it (`AdoptCrossing`, with the line).
+- **`luac` 5.4** is accepted when 5.5 is missing: the check only refuses a
+  write that turns a compiling file into one that does not, which both
+  versions agree on for monitor rules.
+- **The in-memory Hyprland** is also reachable from the binary through a
+  hidden `--fake-hyprland` option, for end-to-end tests and the demo.
+- **AUR:** `hyprtilt` (release) and `hyprtilt-git` exist and are tested in
+  CI; the release workflow publishes them only with `AUR_SSH_KEY` and a
+  pinned `AUR_HOST_KEY`. `hyprtilt-bin` waits for the first release, when
+  there are binaries to test it with.
 
 ## Non-goals for 0.x
 
