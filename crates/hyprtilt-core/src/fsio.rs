@@ -375,6 +375,9 @@ pub fn diff(old: &str, new: &str, name: &str) -> String {
     if old == new {
         return String::new();
     }
+    // `a/` and `b/` as in git, without doubling the slash of an absolute
+    // path.
+    let name = name.strip_prefix('/').unwrap_or(name);
     similar::TextDiff::from_lines(old, new)
         .unified_diff()
         .context_radius(3)
@@ -537,5 +540,7 @@ mod tests {
     fn diffs() {
         let d = diff("a\n", "b\n", "x.lua");
         assert!(d.starts_with("--- a/x.lua\n+++ b/x.lua\n"), "{d}");
+        let d = diff("a\n", "b\n", "/home/u/x.lua");
+        assert!(d.starts_with("--- a/home/u/x.lua\n"), "{d}");
     }
 }
