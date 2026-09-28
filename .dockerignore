@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
 #
-# Build context of containers/build/Containerfile: only the toolchain pins.
+# Build context of containers/build/Containerfile: only the toolchain pins
+# and the pinned documentation requirements.
 # podman/buildah and BuildKit both read this file.
 *
 !rust-toolchain.toml
+!docs/requirements.txt

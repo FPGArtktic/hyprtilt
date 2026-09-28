@@ -15,6 +15,7 @@ on:
     paths:
       - containers/build/**
       - rust-toolchain.toml
+      - docs/requirements.txt
       - .dockerignore
       - .github/workflows/build-image.yml
   workflow_dispatch:

@@ -86,7 +86,7 @@ RUN set -euo pipefail; \
 #   namcap                      PKGBUILD and package lint
 #   git-cliff                   CHANGELOG.md from commit history
 #   vhs, ttyd, ffmpeg, chromium demo GIFs (vhs drives a headless browser)
-#   mkdocs-material             documentation site
+#   uv                          installs the documentation toolchain below
 #   cosign, syft                release signatures and SBOM
 #   shellcheck, actionlint      lint of scripts and GitHub workflows
 #   catatonit                   PID 1 that reaps zombies
@@ -94,8 +94,8 @@ RUN set -euo pipefail; \
     pacman -S --noconfirm --needed \
       aarch64-linux-gnu-gcc actionlint cargo-audit cargo-deb cargo-deny \
       cargo-generate-rpm cargo-llvm-cov catatonit chromium cosign ffmpeg \
-      git git-cliff just mkdocs-material namcap openssh python rustup \
-      shellcheck sudo syft ttyd vhs; \
+      git git-cliff just namcap openssh python rustup \
+      shellcheck sudo syft ttyd uv vhs; \
     rm -rf /var/cache/pacman/pkg/*
 
 # The unprivileged user. With podman --userns=keep-id the host user maps to
@@ -128,6 +128,18 @@ RUN set -euo pipefail; \
     rustup show; \
     chmod -R a+rX /opt/rustup; \
     rm -rf /tmp/toolchain
+
+# Documentation toolchain (MkDocs, Material for MkDocs): the exact versions
+# with hashes from docs/requirements.txt, which Read the Docs installs too,
+# so the site builds the same everywhere.
+COPY docs/requirements.txt /tmp/docs/requirements.txt
+RUN set -euo pipefail; \
+    UV_PYTHON_DOWNLOADS=never uv venv --quiet --python /usr/bin/python /opt/docs; \
+    UV_CACHE_DIR=/tmp/docs/cache uv pip install --quiet --python /opt/docs/bin/python \
+      --require-hashes -r /tmp/docs/requirements.txt; \
+    rm -rf /tmp/docs; \
+    chmod -R a+rX /opt/docs
+ENV PATH=/opt/docs/bin:/usr/local/sbin:/usr/local/bin:/usr/bin
 
 # Cache locations, mounted as named volumes by "just podman". The paths must
 # match the volume mounts in the justfile.
