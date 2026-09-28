@@ -165,8 +165,9 @@ fn group_item(src: &str, lines: &[block::Line], pieces: &[&Piece]) -> Item {
 }
 
 /// Rebuild the body from `items` for the new list of `rules`. `format`
-/// produces the text of one rule without indentation or line ending; `eol`
-/// is the line ending of the file.
+/// produces the text of one rule without indentation or final line ending,
+/// with `\n` between its lines; `eol` is the line ending of the file. Every
+/// line of a rule gets the indentation of the item it replaces.
 ///
 /// # Errors
 ///
@@ -178,6 +179,9 @@ pub(crate) fn rewrite(
     format: &dyn Fn(&MonitorRule) -> Result<String, ConfigError>,
     eol: &str,
 ) -> Result<String, ConfigError> {
+    let text_of = |rule: &MonitorRule, prefix: &str| -> Result<String, ConfigError> {
+        Ok(format(rule)?.replace('\n', &format!("{eol}{prefix}")))
+    };
     // Assign every new rule to the first unused old rule with the same
     // selector: slot (item, position in item) -> index into `rules`.
     let mut slots: Vec<Vec<Option<usize>>> =
@@ -235,7 +239,7 @@ pub(crate) fn rewrite(
             .count();
         let at = out.len() - comments;
         for (offset, &n) in before[i].iter().enumerate() {
-            let text = format!("{}{}{eol}", item.prefix, format(&rules[n])?);
+            let text = format!("{}{}{eol}", item.prefix, text_of(&rules[n], &item.prefix)?);
             out.insert(at + offset, (ItemKind::Rules, text));
         }
         if kept.is_empty() {
@@ -252,7 +256,7 @@ pub(crate) fn rewrite(
         let mut regenerated = String::new();
         for (k, n) in kept.iter().enumerate() {
             regenerated.push_str(&item.prefix);
-            regenerated.push_str(&format(&rules[*n])?);
+            regenerated.push_str(&text_of(&rules[*n], &item.prefix)?);
             if k + 1 == kept.len() {
                 regenerated.push_str(&item.suffix);
             }
@@ -261,7 +265,7 @@ pub(crate) fn rewrite(
         out.push((ItemKind::Rules, regenerated));
     }
     for n in appended {
-        let text = format!("{indent}{}{eol}", format(&rules[n])?);
+        let text = format!("{indent}{}{eol}", text_of(&rules[n], &indent)?);
         out.push((ItemKind::Rules, text));
     }
     Ok(out.into_iter().map(|(_, text)| text).collect())
@@ -375,6 +379,17 @@ mod tests {
             &[rule("Z", "2x2@60"), rule("B", "1x1@60")],
         );
         assert_eq!(out, "Z=2x2@60\nB=1x1@60\n");
+    }
+
+    #[test]
+    fn multi_line_rules_are_indented_and_use_the_file_line_ending() {
+        let src = "  A=1x1@60\r\n";
+        let pieces = toy_pieces(src, &(0..src.len()));
+        let items = items(src, &(0..src.len()), &pieces).unwrap();
+        let two_lines: &dyn Fn(&MonitorRule) -> Result<String, ConfigError> =
+            &|r| Ok(format!("{}\n  more", toy_text(r)));
+        let out = rewrite(src, &items, &[rule("A", "2x2@60")], two_lines, "\r\n").unwrap();
+        assert_eq!(out, "  A=2x2@60\r\n    more\r\n");
     }
 
     #[test]

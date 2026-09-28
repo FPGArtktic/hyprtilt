@@ -17,6 +17,11 @@ pub(crate) fn overlay(earlier: &mut MonitorRule, later: &MonitorRule) {
     earlier.overlay(later);
 }
 
+/// hyprlang semantics: the later `monitor=` line replaces the rule.
+pub(crate) fn replace(earlier: &mut MonitorRule, later: &MonitorRule) {
+    earlier.clone_from(later);
+}
+
 /// The rules to adopt: every adoptable rule when `lines` is empty,
 /// otherwise the rules starting on `lines`, sorted by position.
 ///
@@ -264,8 +269,10 @@ mod tests {
         a.vrr = Some(1);
         let mut b = MonitorRule::new("DP-1");
         b.transform = Some(crate::model::Transform::new(1).unwrap());
-        let lua = merge_in_order([a, b], overlay);
+        let lua = merge_in_order([a.clone(), b.clone()], overlay);
         assert_eq!((lua[0].vrr, lua[0].transform.is_some()), (Some(1), true));
+        let hyprlang = merge_in_order([a, b.clone()], replace);
+        assert_eq!(hyprlang, [b]);
     }
 
     #[test]
