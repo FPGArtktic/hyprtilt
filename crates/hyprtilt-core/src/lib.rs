@@ -12,6 +12,7 @@
 #![deny(missing_docs)]
 
 pub mod lua;
+pub mod model;
 
 /// Version of the crate, as declared in `Cargo.toml`.
 ///
