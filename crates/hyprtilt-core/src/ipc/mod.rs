@@ -9,6 +9,7 @@
 //! section 3 for the wire format.
 
 pub mod events;
+pub mod fake;
 pub mod socket;
 
 use serde::{Deserialize, Serialize};
