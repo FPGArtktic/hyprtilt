@@ -11,11 +11,17 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod apply;
 pub mod block;
 pub mod document;
+pub mod fsio;
+pub mod geometry;
+pub mod hyprlang;
 pub mod ipc;
 pub mod lua;
 pub mod model;
+pub mod profile;
+pub mod settings;
 
 /// Version of the crate, as declared in `Cargo.toml`.
 ///
