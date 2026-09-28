@@ -1,0 +1,162 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Continuous integration. The jobs run the same "just" targets as developers
+# do locally (see CONTRIBUTING.md), inside the build image published by
+# build-image.yml and pinned here by digest. Only the aarch64 job runs on the
+# host: the Arch Linux image exists for x86_64 only.
+#
+# The image digest appears once per container job. Update all of them
+# together when build-image.yml publishes a new image.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# A pull request has one group, so a new push cancels the superseded run.
+# Every push to main has a group of its own and is never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  checks:
+    name: lint, test, docs, deny, coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/fpgartktic/hyprtilt-build@sha256:2af27a7b01bd624a603ca6d625fed24ae408fa4cbcad866c6c30697d276e3ceb
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache cargo registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            /cache/cargo/registry
+            /cache/cargo/git
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-
+
+      - name: Lint
+        run: just lint
+
+      - name: Build
+        run: just build
+
+      - name: Test
+        run: just test
+
+      - name: API documentation
+        run: just doc
+
+      - name: Dependencies
+        run: just deny
+
+      - name: Coverage
+        run: just cov
+
+      - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: lcov.info
+          token: ${{ env.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Keep coverage report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: |
+            lcov.info
+            coverage.json
+          retention-days: 14
+
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/fpgartktic/hyprtilt-build@sha256:2af27a7b01bd624a603ca6d625fed24ae408fa4cbcad866c6c30697d276e3ceb
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check with the MSRV toolchain
+        run: just msrv
+
+  commits:
+    name: commit messages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/fpgartktic/hyprtilt-build@sha256:2af27a7b01bd624a603ca6d625fed24ae408fa4cbcad866c6c30697d276e3ceb
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          # The pull request head, not the merge commit GitHub creates.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check subjects and sign-offs
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: just commits "$BASE"
+
+  aarch64:
+    name: test (aarch64)
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned toolchain
+        run: |
+          rustup toolchain install
+          rustc --version
+
+      - name: Test
+        run: |
+          cargo test --workspace --all-targets --locked
+          cargo test --workspace --doc --locked
