@@ -296,3 +296,32 @@ fn offline_layouts_come_from_the_block() {
     assert_eq!(rect_of(&l, "HDMI-A-1"), Rect::new(0, 0, 1440, 2560));
     assert_eq!(l.rules(), rules);
 }
+
+#[test]
+fn live_state_and_descriptions() {
+    let mut rules = block();
+    rules[2].vrr = Some(2);
+    rules[2].position = Some(Position::At { x: 0, y: 9999 });
+    let mut l = Layout::new(&monitors(), &rules, false);
+    l.take_live_state();
+    let dp = l.index("DP-1").unwrap();
+    assert_eq!(
+        l.outputs[dp].rule.position,
+        Some(Position::At { x: 3360, y: 975 })
+    );
+    assert_eq!(l.outputs[dp].rule.vrr, Some(2), "other fields are kept");
+    assert_eq!(
+        l.outputs[dp].rule.mode.as_ref().unwrap().to_string(),
+        "2560x1440@179.95"
+    );
+    l.use_descriptions();
+    let selectors: Vec<&str> = l.outputs.iter().map(|o| o.rule.output.as_str()).collect();
+    assert_eq!(
+        selectors,
+        [
+            "desc:Samsung Electric Company Odyssey G50F SERIAL0001",
+            "desc:Najing CEC Panda FPD Technology CO. ltd 0x004D",
+            "desc:Samsung Electric Company Odyssey G50F SERIAL0002"
+        ]
+    );
+}

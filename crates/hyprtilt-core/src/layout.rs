@@ -797,6 +797,39 @@ impl Layout {
         true
     }
 
+    /// Replace the layout fields of every rule (mode, position, scale,
+    /// transform, enabled state, mirror) with the live state, keeping every
+    /// other field, so that the rules describe the running layout.
+    pub fn take_live_state(&mut self) {
+        let all: Vec<MonitorInfo> = self.outputs.iter().map(|o| o.info.clone()).collect();
+        for o in &mut self.outputs {
+            let live = rule_from_live(&o.info, &all, false);
+            o.rule.mode = live.mode;
+            o.rule.position = live.position;
+            o.rule.scale = live.scale;
+            o.rule.transform = live.transform;
+            o.rule.disabled = live.disabled;
+            o.rule.mirror = live.mirror;
+        }
+    }
+
+    /// Select every output by `desc:` and its description, where the
+    /// description is unique among the outputs and can be written.
+    pub fn use_descriptions(&mut self) {
+        let descriptions: Vec<String> = self
+            .outputs
+            .iter()
+            .map(|o| o.info.description.clone())
+            .collect();
+        for o in &mut self.outputs {
+            let d = &o.info.description;
+            let unique = descriptions.iter().filter(|x| *x == d).count() == 1;
+            if unique && !d.is_empty() && !d.contains(['$', '#', ',']) {
+                o.rule.output = crate::model::Selector::new(format!("desc:{d}"));
+            }
+        }
+    }
+
     /// The complete rule for a live change: every field hyprtilt owns is
     /// written, because Lua merges a live rule into the existing one.
     #[must_use]

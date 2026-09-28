@@ -120,6 +120,18 @@ impl FakeHyprland {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
+    /// The configuration file a reload reads, if any.
+    #[must_use]
+    pub fn config_path(&self) -> Option<PathBuf> {
+        self.lock().setup.config.clone()
+    }
+
+    /// The configuration provider.
+    #[must_use]
+    pub fn provider(&self) -> Backend {
+        self.lock().setup.provider
+    }
+
     /// Every request received so far.
     #[must_use]
     pub fn requests(&self) -> Vec<String> {
@@ -567,6 +579,8 @@ mod tests {
         std::fs::write(&path, text).unwrap();
         std::fs::write(dir.path().join("hypr-user.lua"), HYPR_USER).unwrap();
         let fake = FakeHyprland::from_file(&path).unwrap();
+        assert_eq!(fake.config_path(), Some(dir.path().join("hypr-user.lua")));
+        assert_eq!(fake.provider(), Backend::Lua);
         fake.reload().unwrap();
         assert!(fake.config_errors().unwrap().is_empty());
         assert!(FakeHyprland::from_file(&dir.path().join("missing.json")).is_err());
