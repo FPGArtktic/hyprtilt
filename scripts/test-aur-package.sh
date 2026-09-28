@@ -27,6 +27,8 @@ recipe="${src}/packaging/aur/${pkg}"
 if [[ "$(id -u)" -eq 0 ]]; then
     [[ -f "${recipe}/PKGBUILD" ]] || { echo "no recipe: ${recipe}" >&2; exit 1; }
     pacman -Syu --noconfirm --needed git namcap sudo >/dev/null
+    # The repository may belong to another user (CI checkouts).
+    git config --global --add safe.directory '*'
     useradd --create-home builder
     printf 'builder ALL=(root) NOPASSWD: /usr/bin/pacman\n' >/etc/sudoers.d/builder
     # A private clone: makepkg must not write to the mounted repository.

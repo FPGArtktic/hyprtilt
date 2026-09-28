@@ -56,6 +56,23 @@ msrv:
 commits base="origin/main":
     scripts/check-commits.sh "{{ base }}"
 
+# Build the documentation site into site/ (warnings are errors).
+docs:
+    mkdocs build --strict --site-dir site
+
+# Build without network access from vendored dependencies, as distributions do.
+offline:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    work="$(mktemp -d)"
+    trap 'rm -rf "$work"' EXIT
+    git archive HEAD | tar -x -C "$work"
+    cd "$work"
+    mkdir -p .cargo
+    cargo vendor --locked --versioned-dirs vendor > .cargo/config.toml
+    CARGO_HOME="$work/cargo-home" cargo build --offline --frozen --release -p hyprtilt
+    "${CARGO_TARGET_DIR:-target}/release/hyprtilt" --version
+
 # Everything the main CI job checks.
 ci: lint build test doc deny cov
 
