@@ -744,6 +744,7 @@ pub struct ExtraField {
 
 /// One monitor rule. `None` means the field is not written.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MonitorRule {
     /// `output`: which monitors the rule applies to.
     pub output: Selector,
