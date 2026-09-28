@@ -253,7 +253,9 @@ impl Profile {
     #[must_use]
     pub fn to_toml(&self, name: &str) -> String {
         let body = toml::to_string_pretty(self).unwrap_or_default();
-        format!("# hyprtilt profile {name:?}; see `man hyprtilt` for the format.\n\n{body}")
+        format!(
+            "# hyprtilt profile {name:?}; the format is described in\n# https://hyprtilt.readthedocs.io/en/latest/guide/profiles/\n\n{body}"
+        )
     }
 }
 
