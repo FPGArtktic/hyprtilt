@@ -13,13 +13,13 @@ how to test it and which decisions were made.
 | Stage | Scope | State |
 |---|---|---|
 | 0. Bootstrap | Cargo workspace, pinned build image, `justfile`, CI, contribution rules | :material-check-circle:{ style="color: #00c781" } done |
-| 1. Research and design | [Verified notes on Hyprland's Lua API](../hyprland-lua-api.md), [architecture decision record](../adr/0001-architecture.md) | :material-check-circle:{ style="color: #00c781" } done (ADR proposed) |
-| 2. Core and `list` | Monitor model, geometry, Lua and hyprlang managed blocks, IPC, `list`, `doctor` | :material-progress-clock: in progress |
-| 3. TUI | Canvas, selection, moving, rotation, details panel, saving the block | :material-circle-outline: planned |
-| 4. Apply and the rest of the TUI | Apply with countdown and rollback, modes, scale, VRR, snapping, profiles, adoption | :material-circle-outline: planned |
-| 5. CLI | All subcommands, `--json`, `--dry-run`, exit codes, man page, completions | :material-circle-outline: planned |
-| 6. Packaging and documentation | AUR, `.deb`, `.rpm`, release workflow, this site | :material-circle-outline: planned |
-| 7. Release | `v0.1.0` | :material-circle-outline: planned |
+| 1. Research and design | [Verified notes on Hyprland's Lua API](../hyprland-lua-api.md), [architecture decision record](../adr/0001-architecture.md) | :material-check-circle:{ style="color: #00c781" } done |
+| 2. Core and `list` | Monitor model, geometry, Lua and hyprlang managed blocks, IPC, `list`, `doctor` | :material-check-circle:{ style="color: #00c781" } done |
+| 3. TUI | Canvas, selection, moving, rotation, details panel, saving the block | :material-check-circle:{ style="color: #00c781" } done |
+| 4. Apply and the rest of the TUI | Apply with countdown and rollback, modes, refresh rates, scale, VRR, snapping, profiles, adoption | :material-check-circle:{ style="color: #00c781" } done |
+| 5. CLI | All subcommands, `--json`, `--dry-run`, exit codes, man page, completions | :material-check-circle:{ style="color: #00c781" } done |
+| 6. Packaging and documentation | AUR, `.deb`, `.rpm`, release workflow, this site | :material-check-circle:{ style="color: #00c781" } done |
+| 7. Release | Checks on real hardware ([open questions](../hyprland-lua-api.md#13-open-questions-and-facts-that-need-runtime-confirmation)), demo GIF, `v0.1.0`, AUR and crates.io | :material-circle-outline: planned |
 
 ## Non-goals for 0.x
 

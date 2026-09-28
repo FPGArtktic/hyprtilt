@@ -6,7 +6,7 @@
 # artifacts are built in the build image, the checksums are signed keyless
 # with cosign, and a GitHub release is created. crates.io and the AUR are
 # published only when their secrets are configured (CARGO_REGISTRY_TOKEN,
-# AUR_SSH_KEY).
+# AUR_SSH_KEY with the variable AUR_HOST_KEY; scripts/publish-aur.sh).
 #
 # "Run workflow" (workflow_dispatch) is a dry run: it builds and checks
 # everything and keeps the artifacts, and publishes nothing.
@@ -158,3 +158,43 @@ jobs:
       - name: Skipped
         if: env.CARGO_REGISTRY_TOKEN == ''
         run: echo "::notice::CARGO_REGISTRY_TOKEN is not set; crates.io was not published"
+
+  aur:
+    name: AUR
+    needs: publish
+    # Pre-releases stay off the AUR; hyprtilt there is the latest release.
+    if: github.event_name == 'push' && !contains(github.ref_name, '-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+    container:
+      image: ghcr.io/fpgartktic/hyprtilt-build@sha256:c479dd766fe1014d09fc522ff6bc8a451a5eb31f062069be7297676641b81587
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+      AUR_HOST_KEY: ${{ vars.AUR_HOST_KEY }}
+    steps:
+      - name: Check out
+        if: env.AUR_SSH_KEY != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the recipes are taken from the tag
+          persist-credentials: false
+
+      - name: Trust the checkout
+        if: env.AUR_SSH_KEY != ''
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Publish the recipes
+        if: env.AUR_SSH_KEY != ''
+        env:
+          TAG: ${{ github.ref_name }}
+        run: scripts/publish-aur.sh "${TAG#v}"
+
+      - name: Skipped
+        if: env.AUR_SSH_KEY == ''
+        run: echo "::notice::AUR_SSH_KEY is not set; the AUR was not published"

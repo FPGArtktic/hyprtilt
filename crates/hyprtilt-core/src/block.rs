@@ -289,6 +289,31 @@ pub fn replace_body(src: &str, location: &BlockLocation, body: &str) -> String {
 /// ```
 #[must_use]
 pub fn insert_block(src: &str, at: usize, body: &str, markers: &Markers) -> String {
+    insert(src, at, body, markers, true)
+}
+
+/// Like [`insert_block`], but without blank lines around the block: used
+/// when the block takes the place of lines that were there before, such as
+/// rules adopted into it, so that a comment above them stays attached.
+///
+/// # Panics
+///
+/// Panics if `at` is not at a line start or the end of `src`.
+///
+/// # Examples
+///
+/// ```
+/// use hyprtilt_core::block::{insert_block_in_place, LUA_MARKERS};
+///
+/// let out = insert_block_in_place("-- screens\nx = 1\n", 11, "r\n", &LUA_MARKERS);
+/// assert_eq!(out, "-- screens\n-- BEGIN hyprtilt (managed)\nr\n-- END hyprtilt\nx = 1\n");
+/// ```
+#[must_use]
+pub fn insert_block_in_place(src: &str, at: usize, body: &str, markers: &Markers) -> String {
+    insert(src, at, body, markers, false)
+}
+
+fn insert(src: &str, at: usize, body: &str, markers: &Markers, separate: bool) -> String {
     assert!(
         at == src.len() || at == 0 || src.as_bytes()[at - 1] == b'\n',
         "insertion point {at} is not at a line start"
@@ -302,7 +327,7 @@ pub fn insert_block(src: &str, at: usize, body: &str, markers: &Markers) -> Stri
     if !before.is_empty() && !before.ends_with('\n') {
         out.push_str(eol);
     }
-    if !before.is_empty() && !ends_with_blank_line(before) {
+    if separate && !before.is_empty() && !ends_with_blank_line(before) {
         out.push_str(eol);
     }
     out.push_str(markers.begin);
@@ -313,7 +338,7 @@ pub fn insert_block(src: &str, at: usize, body: &str, markers: &Markers) -> Stri
     }
     out.push_str(markers.end);
     out.push_str(eol);
-    if !after.is_empty() && !starts_with_blank_line(after) {
+    if separate && !after.is_empty() && !starts_with_blank_line(after) {
         out.push_str(eol);
     }
     out.push_str(after);

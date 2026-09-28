@@ -243,6 +243,54 @@ impl FromStr for Mode {
     }
 }
 
+impl Mode {
+    /// The pixel size, for an explicit resolution.
+    #[must_use]
+    pub fn resolution(&self) -> Option<(u32, u32)> {
+        match self {
+            Mode::Resolution { width, height, .. } => Some((*width, *height)),
+            _ => None,
+        }
+    }
+
+    /// The refresh rate, for an explicit resolution that has one.
+    #[must_use]
+    pub fn refresh(&self) -> Option<f64> {
+        match self {
+            Mode::Resolution { refresh, .. } => *refresh,
+            _ => None,
+        }
+    }
+
+    /// The mode as it reads back after being written: the refresh rate
+    /// with at most two decimals.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hyprtilt_core::model::Mode;
+    ///
+    /// let m = Mode::Resolution { width: 2560, height: 1440, refresh: Some(179.952) };
+    /// assert_eq!(m.normalized().to_string(), "2560x1440@179.95");
+    /// assert_eq!(m.normalized().refresh(), Some(179.95));
+    /// ```
+    #[must_use]
+    pub fn normalized(&self) -> Mode {
+        match self {
+            Mode::Resolution {
+                width,
+                height,
+                refresh: Some(hz),
+            } => Mode::Resolution {
+                width: *width,
+                height: *height,
+                refresh: Some(format_refresh(*hz).parse().unwrap_or(*hz)),
+            },
+            other => other.clone(),
+        }
+    }
+}
+
 impl From<Mode> for String {
     fn from(m: Mode) -> String {
         m.to_string()
@@ -412,7 +460,83 @@ impl fmt::Display for Scale {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Scale::Auto => f.write_str("auto"),
-            Scale::Factor(v) => write!(f, "{v}"),
+            Scale::Factor(v) => f.write_str(&crate::geometry::format_scale(*v)),
+        }
+    }
+}
+
+/// Hyprland's `isNumber(s, true)` from hyprutils: an optional leading
+/// minus, digits, at most one dot that is not the first character, and a
+/// digit at the end. `".5"` and `"1."` are not numbers.
+fn hyprland_is_number(s: &str) -> bool {
+    let bytes = s.as_bytes();
+    let mut dot = false;
+    for (i, &c) in bytes.iter().enumerate() {
+        if i == 0 && c == b'-' {
+            continue;
+        }
+        if c.is_ascii_digit() {
+            continue;
+        }
+        if c != b'.' || i == 0 || dot {
+            return false;
+        }
+        dot = true;
+    }
+    bytes.last().is_some_and(u8::is_ascii_digit)
+}
+
+impl Scale {
+    /// Parse a scale exactly as Hyprland's `parseScale` reads a string:
+    /// empty or starting with `auto` is automatic, otherwise it must be a
+    /// number in Hyprland's strict sense and at least 0.25. No whitespace
+    /// is trimmed.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidValue`] for anything Hyprland would not use.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hyprtilt_core::model::Scale;
+    ///
+    /// assert_eq!(Scale::parse_hyprland("1.5").unwrap(), Scale::Factor(1.5));
+    /// assert_eq!(Scale::parse_hyprland("auto").unwrap(), Scale::Auto);
+    /// assert!(Scale::parse_hyprland(".5").is_err());
+    /// assert!(Scale::parse_hyprland(" 1").is_err());
+    /// ```
+    pub fn parse_hyprland(s: &str) -> Result<Scale, InvalidValue> {
+        if s.is_empty() || s.starts_with("auto") {
+            return Ok(Scale::Auto);
+        }
+        if !hyprland_is_number(s) {
+            return Err(InvalidValue::new("scale", s));
+        }
+        match s.parse::<f64>() {
+            Ok(v) if v.is_finite() && v >= 0.25 => Ok(Scale::Factor(v)),
+            _ => Err(InvalidValue::new("scale", s)),
+        }
+    }
+
+    /// The scale as it reads back after being written: at most six
+    /// decimals. Written rules are a fixed point of reading and writing.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hyprtilt_core::model::Scale;
+    ///
+    /// assert_eq!(Scale::Factor(4.0 / 3.0).normalized(), Scale::Factor(1.333333));
+    /// assert_eq!(Scale::Auto.normalized(), Scale::Auto);
+    /// ```
+    #[must_use]
+    pub fn normalized(self) -> Scale {
+        match self {
+            Scale::Auto => Scale::Auto,
+            Scale::Factor(v) => {
+                Scale::Factor(crate::geometry::format_scale(v).parse().unwrap_or(v))
+            }
         }
     }
 }
@@ -433,15 +557,7 @@ impl FromStr for Scale {
     /// assert!("0.1".parse::<Scale>().is_err());
     /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let t = s.trim();
-        if t.is_empty() || t.starts_with("auto") {
-            return Ok(Scale::Auto);
-        }
-        let v: f64 = t.parse().map_err(|_| InvalidValue::new("scale", s))?;
-        if !v.is_finite() || v < 0.25 {
-            return Err(InvalidValue::new("scale", s));
-        }
-        Ok(Scale::Factor(v))
+        Scale::parse_hyprland(s.trim()).map_err(|_| InvalidValue::new("scale", s))
     }
 }
 
@@ -595,6 +711,12 @@ impl FromStr for ColorManagement {
     }
 }
 
+/// The transfer function names `sdr_eotf` accepts. hyprtilt stores these
+/// names only: the digit forms mean different functions in Lua and in
+/// hyprlang (`docs/hyprland-lua-api.md`, section 8.2), so each backend
+/// translates digits when it reads them.
+pub const SDR_EOTF_NAMES: &[&str] = &["default", "auto", "srgb", "gamma22", "gamma22force"];
+
 /// Reserved area in logical pixels (`reserved` in Lua, `addreserved` in
 /// hyprlang).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -622,6 +744,7 @@ pub struct ExtraField {
 
 /// One monitor rule. `None` means the field is not written.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct MonitorRule {
     /// `output`: which monitors the rule applies to.
     pub output: Selector,
@@ -746,6 +869,81 @@ impl MonitorRule {
     #[must_use]
     pub fn transform_or_default(&self) -> Transform {
         self.transform.unwrap_or_default()
+    }
+
+    /// The rule as it reads back after being written (refresh rate and
+    /// scale rounded to the precision hyprtilt writes).
+    #[must_use]
+    pub fn normalized(&self) -> MonitorRule {
+        let mut rule = self.clone();
+        rule.mode = rule.mode.as_ref().map(Mode::normalized);
+        rule.scale = rule.scale.map(Scale::normalized);
+        rule
+    }
+
+    /// Apply a later rule for the same output the way Hyprland merges Lua
+    /// rules: every field the later rule writes replaces this rule's
+    /// value, every other field is kept. Unmodelled keys merge by name.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use hyprtilt_core::model::{MonitorRule, Transform};
+    ///
+    /// let mut earlier = MonitorRule::new("DP-1");
+    /// earlier.vrr = Some(2);
+    /// earlier.transform = Some(Transform::new(1).unwrap());
+    /// let mut later = MonitorRule::new("DP-1");
+    /// later.transform = Some(Transform::NORMAL);
+    /// earlier.overlay(&later);
+    /// assert_eq!(earlier.vrr, Some(2));
+    /// assert_eq!(earlier.transform, Some(Transform::NORMAL));
+    /// ```
+    pub fn overlay(&mut self, later: &MonitorRule) {
+        fn take<T: Clone>(field: &mut Option<T>, later: Option<&T>) {
+            if let Some(value) = later {
+                *field = Some(value.clone());
+            }
+        }
+        take(&mut self.mode, later.mode.as_ref());
+        take(&mut self.position, later.position.as_ref());
+        take(&mut self.scale, later.scale.as_ref());
+        take(&mut self.transform, later.transform.as_ref());
+        take(&mut self.disabled, later.disabled.as_ref());
+        take(&mut self.vrr, later.vrr.as_ref());
+        take(&mut self.mirror, later.mirror.as_ref());
+        take(&mut self.bitdepth, later.bitdepth.as_ref());
+        take(&mut self.cm, later.cm.as_ref());
+        take(&mut self.sdr_eotf, later.sdr_eotf.as_ref());
+        take(&mut self.sdrbrightness, later.sdrbrightness.as_ref());
+        take(&mut self.sdrsaturation, later.sdrsaturation.as_ref());
+        take(&mut self.icc, later.icc.as_ref());
+        take(
+            &mut self.supports_wide_color,
+            later.supports_wide_color.as_ref(),
+        );
+        take(&mut self.supports_hdr, later.supports_hdr.as_ref());
+        take(
+            &mut self.sdr_min_luminance,
+            later.sdr_min_luminance.as_ref(),
+        );
+        take(
+            &mut self.sdr_max_luminance,
+            later.sdr_max_luminance.as_ref(),
+        );
+        take(&mut self.min_luminance, later.min_luminance.as_ref());
+        take(&mut self.max_luminance, later.max_luminance.as_ref());
+        take(
+            &mut self.max_avg_luminance,
+            later.max_avg_luminance.as_ref(),
+        );
+        take(&mut self.reserved, later.reserved.as_ref());
+        for field in &later.extra {
+            match self.extra.iter_mut().find(|f| f.key == field.key) {
+                Some(existing) => existing.raw.clone_from(&field.raw),
+                None => self.extra.push(field.clone()),
+            }
+        }
     }
 }
 
@@ -898,6 +1096,52 @@ mod tests {
         assert_eq!(json, r#"{"output":"","scale":"auto"}"#);
         assert_eq!(serde_json::from_str::<MonitorRule>(&json).unwrap(), auto);
         assert!(serde_json::from_str::<MonitorRule>(r#"{"output":"x","transform":9}"#).is_err());
+    }
+
+    #[test]
+    fn overlay_merges_like_lua() {
+        let mut base = MonitorRule::new("DP-1");
+        base.mode = Some("1920x1080@60".parse().unwrap());
+        base.extra.push(ExtraField {
+            key: "a".to_owned(),
+            raw: "1".to_owned(),
+        });
+        let mut later = MonitorRule::new("DP-1");
+        later.scale = Some(Scale::Factor(2.0));
+        later.extra.push(ExtraField {
+            key: "a".to_owned(),
+            raw: "2".to_owned(),
+        });
+        later.extra.push(ExtraField {
+            key: "b".to_owned(),
+            raw: "3".to_owned(),
+        });
+        base.overlay(&later);
+        assert_eq!(base.mode.unwrap().to_string(), "1920x1080@60");
+        assert_eq!(base.scale, Some(Scale::Factor(2.0)));
+        let extra: Vec<_> = base
+            .extra
+            .iter()
+            .map(|f| (f.key.as_str(), f.raw.as_str()))
+            .collect();
+        assert_eq!(extra, [("a", "2"), ("b", "3")]);
+    }
+
+    #[test]
+    fn normalization_is_idempotent() {
+        let mut rule = MonitorRule::new("DP-1");
+        rule.mode = Some(Mode::Resolution {
+            width: 2560,
+            height: 1440,
+            refresh: Some(179.952_001),
+        });
+        rule.scale = Some(Scale::Factor(5.0 / 3.0));
+        let once = rule.normalized();
+        assert_eq!(once.normalized(), once);
+        assert_eq!(once.scale.unwrap().to_string(), "1.666667");
+        assert_eq!(Mode::Preferred.normalized(), Mode::Preferred);
+        assert_eq!(Mode::Preferred.resolution(), None);
+        assert_eq!(Mode::Preferred.refresh(), None);
     }
 
     #[test]

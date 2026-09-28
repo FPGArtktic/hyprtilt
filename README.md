@@ -21,16 +21,20 @@ configuration arrived; the hyprlang backend covers the older versions that
 Ubuntu and Debian still ship.
 
 > [!IMPORTANT]
-> **hyprtilt is under construction and has no release yet.** The binary
-> currently prints its version and nothing else. What is finished is the
-> research, the design and the whole build, packaging and release pipeline.
-> Follow the [roadmap](https://hyprtilt.readthedocs.io/en/latest/project/roadmap/).
+> **hyprtilt works but has no release yet.** The terminal interface and
+> every command are implemented and tested against an in-memory Hyprland;
+> a few behaviours still need confirming on real hardware (see
+> [open questions](#status)). Build it from source or with the
+> `hyprtilt-git` recipe until `v0.1.0`.
 
 ## Contents
 
 - [Why hyprtilt](#why-hyprtilt)
-- [How it will work](#how-it-will-work)
+- [How it works](#how-it-works)
+- [The terminal interface](#the-terminal-interface)
+- [The command line](#the-command-line)
 - [How it compares](#how-it-compares)
+- [Status](#status)
 - [Installation](#installation)
 - [Building from source](#building-from-source)
 - [Documentation](#documentation)
@@ -68,7 +72,9 @@ truth.
 - Changes are verified against the live state over Hyprland's IPC, and are
   rolled back unless you confirm them.
 
-## How it will work
+![A hyprtilt session: adopting the rules, changing the refresh rate, rotating, aligning, applying live and writing the file](docs/assets/demo.gif)
+
+## How it works
 
 ```lua
 -- Your own settings stay exactly as they are.
@@ -84,18 +90,74 @@ return {} -- the block always goes before a top-level return
 ```
 
 ```sh
-hyprtilt                            # the terminal interface
-hyprtilt list --json                # live state and what the file says
-hyprtilt rotate HDMI-A-1 90         # for a keybinding
-hyprtilt apply --confirm-timeout 15 # apply, verify, roll back unless confirmed
-hyprtilt doctor                     # is the right file being loaded?
+hyprtilt doctor      # which file, and does Hyprland load it?
+hyprtilt adopt       # move your existing rules into the managed block
+hyprtilt             # arrange the monitors
 ```
+
+Every change is verified against the live state over Hyprland's IPC and
+kept only when you confirm it within 15 seconds; otherwise the previous
+layout, and the previous file, come back.
+
+## The terminal interface
+
+The monitors are drawn to scale; the panel beside them shows the selected
+monitor's mode, every refresh rate its resolution offers, position, scale
+with the logical size, rotation, VRR and the line of its rule.
+
+| Keys | Action |
+|---|---|
+| `Tab`, `Shift+Tab`, `1`-`9` | select a monitor |
+| `h` `j` `k` `l`, arrows | move by 10 px, or to the next edge of a neighbour |
+| `H` `J` `K` `L`, `Shift`+arrows | move by 100 px |
+| `b` `t` `c` | align the bottom, top or centre with the nearest neighbour |
+| `r` `R`, `f` | rotate right or left, flip |
+| `m` | choose the mode |
+| `[` `]` | lower or raise the refresh rate |
+| `s` | choose the scale (only scales Hyprland accepts as they are) |
+| `v`, `e` | cycle VRR, enable or disable |
+| `u`, `U` | undo, redo |
+| `a` | apply live, keep only if confirmed |
+| `w` | write the file, reload, keep only if confirmed |
+| `o`, `p` | adopt rules from outside the block, profiles |
+| `?`, `q` | help, quit |
+
+The mouse selects and drags monitors. Connecting or disconnecting a
+monitor rebuilds the layout and keeps your edits.
+
+## The command line
+
+For keybindings and scripts; `--json` and `--dry-run` work everywhere.
+
+```sh
+hyprtilt list                          # live state and the rules in the file
+hyprtilt rotate HDMI-A-1 90            # 90, 180, 270 or -90
+hyprtilt move eDP-1 1440x1335
+hyprtilt scale DP-1 1.25               # or auto
+hyprtilt mode DP-1 2560x1440@179.95    # or preferred, highres, highrr
+hyprtilt refresh DP-1 max              # Hz, max, min, up or down
+hyprtilt disable eDP-1 --live          # running session only
+hyprtilt save                          # write the running layout into the block
+hyprtilt apply                         # reload the file, verify, confirm
+hyprtilt profile save desk && hyprtilt profile apply desk
+hyprtilt unmanage                      # remove the markers, keep the rules
+```
+
+| Exit code | Meaning |
+|---|---|
+| 0 | success |
+| 1 | other error |
+| 2 | invalid command line |
+| 3 | Hyprland is not running, or IPC failed |
+| 4 | the file cannot be parsed, or the change is refused |
+| 5 | no such output |
+| 6 | the change was rolled back |
+| 7 | `doctor` found problems |
 
 ## How it compares
 
 Checked on 2026-09-28 against the sources of each project, not their
-marketing. hyprtilt's column is its design; see the status note above for
-what is already built.
+marketing.
 
 | | hyprtilt | hyprmoncfg | hyprmon | nwg-displays | kanshi |
 |---|---|---|---|---|---|
@@ -119,15 +181,31 @@ A hotplug daemon and workspace planning are deliberate non-goals of the 0.x
 releases: hyprmoncfg does them well, and hyprtilt is not trying to replace
 it on that axis.
 
+## Status
+
+Everything in this README is implemented and covered by tests that run
+against fixtures and an in-memory Hyprland; the real configuration of the
+machine running them is never touched. What still needs a check on real
+hardware (listed in the
+[API notes, section 13](docs/hyprland-lua-api.md)):
+
+- which way `r` and `rotate 90` turn the picture: both add one quarter
+  turn to the transform (the Wayland protocol calls transform 1 "90°
+  counter-clockwise"); the result on screen is not confirmed yet (item 1);
+- how Hyprland runs a refresh rate the monitor does not list, a custom
+  mode (item 18);
+- how soon the monitor list shows a change after a reload (item 7); the
+  verification polls for up to 3 seconds.
+
 ## Installation
 
-> Nothing is released yet, so the packages below install a binary that only
-> prints its version.
+> Nothing is released yet; the release packages below describe what every
+> release will provide.
 
-**Arch Linux (AUR).** The recipe in
-[`packaging/aur/hyprtilt-git/`](packaging/aur/hyprtilt-git) builds the
-`main` branch. It is not published to the AUR yet; until it is, build it
-from this repository:
+**Arch Linux (AUR).** [`packaging/aur/hyprtilt-git/`](packaging/aur/hyprtilt-git)
+builds the `main` branch, [`packaging/aur/hyprtilt/`](packaging/aur/hyprtilt)
+a release. Neither is published to the AUR yet; until then, build one from
+this repository:
 
 ```sh
 git clone https://github.com/FPGArtktic/hyprtilt
@@ -177,6 +255,9 @@ With a local Rust toolchain you can also run `just ci` directly.
 <https://hyprtilt.readthedocs.io>, built from [`docs/`](docs). Of special
 interest:
 
+- [Guide](https://hyprtilt.readthedocs.io/en/latest/guide/quick-start/) —
+  quick start, keys, every command, configuration files, profiles,
+  troubleshooting.
 - [ADR 0001: architecture](docs/adr/0001-architecture.md) — every design
   decision and why.
 - [Hyprland monitor configuration API](docs/hyprland-lua-api.md) — about 350

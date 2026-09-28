@@ -42,6 +42,15 @@ pub(crate) struct GlobalArgs {
     /// changing anything.
     #[arg(long, short = 'n', global = true)]
     pub(crate) dry_run: bool,
+
+    /// Print results as JSON.
+    #[arg(long, global = true)]
+    pub(crate) json: bool,
+
+    /// Use an in-memory Hyprland described by a JSON file instead of the
+    /// running compositor (for demonstrations and tests).
+    #[arg(long, global = true, hide = true, value_name = "SETUP.json")]
+    pub(crate) fake_hyprland: Option<PathBuf>,
 }
 
 /// Configuration language.
@@ -88,11 +97,7 @@ pub(crate) struct OutputChange {
 pub(crate) enum Command {
     /// Show the monitors: live state from Hyprland and the rules in the
     /// configuration file.
-    List {
-        /// Print JSON instead of a table.
-        #[arg(long)]
-        json: bool,
-    },
+    List,
 
     /// Rotate an output by a step of 90°.
     Rotate {
@@ -125,6 +130,15 @@ pub(crate) enum Command {
         change: OutputChange,
         /// `WxH@Hz`, `preferred`, `highres` or `highrr`.
         mode: String,
+    },
+
+    /// Set the refresh rate of an output, keeping its resolution.
+    Refresh {
+        #[command(flatten)]
+        change: OutputChange,
+        /// Refresh rate in Hz (the nearest rate the monitor offers is
+        /// used), `max`, `min`, or `up`/`down` for the next rate.
+        rate: String,
     },
 
     /// Enable an output.
@@ -174,11 +188,7 @@ pub(crate) enum Command {
 
     /// Check the setup: Hyprland, the target file, whether Hyprland loads
     /// it, and conflicting rules.
-    Doctor {
-        /// Print JSON instead of text.
-        #[arg(long)]
-        json: bool,
-    },
+    Doctor,
 
     /// Print shell completions.
     Completions {
@@ -196,15 +206,15 @@ pub(crate) enum Command {
 #[derive(Debug, Subcommand)]
 pub(crate) enum ProfileCommand {
     /// List saved profiles.
-    List {
-        /// Print JSON instead of names.
-        #[arg(long)]
-        json: bool,
-    },
+    List,
     /// Save the current layout as a profile.
     Save {
         /// Profile name.
         name: String,
+        /// Select monitors by description (make, model, serial) instead
+        /// of connector name, so the profile survives connector renames.
+        #[arg(long)]
+        desc: bool,
     },
     /// Apply a profile (same as `apply --profile`).
     Apply {
@@ -274,6 +284,13 @@ mod tests {
             ])
             .is_err()
         );
+    }
+
+    #[test]
+    fn refresh_and_global_json() {
+        let cli = Cli::try_parse_from(["hyprtilt", "refresh", "DP-1", "max", "--json"]).unwrap();
+        assert!(cli.global.json);
+        assert!(matches!(cli.command, Some(Command::Refresh { ref rate, .. }) if rate == "max"));
     }
 
     #[test]

@@ -43,6 +43,86 @@ impl Backend {
     }
 }
 
+impl Backend {
+    /// The block markers of the language.
+    #[must_use]
+    pub fn markers(self) -> &'static crate::block::Markers {
+        match self {
+            Backend::Lua => &crate::block::LUA_MARKERS,
+            Backend::Hyprlang => &crate::block::HYPRLANG_MARKERS,
+        }
+    }
+
+    /// Read the managed block and the rules outside it.
+    ///
+    /// # Errors
+    ///
+    /// See [`crate::lua::parse`] and [`crate::hyprlang::parse`].
+    pub fn parse(self, src: &str) -> Result<ConfigDocument, ConfigError> {
+        match self {
+            Backend::Lua => crate::lua::parse(src),
+            Backend::Hyprlang => crate::hyprlang::parse(src),
+        }
+    }
+
+    /// Write `rules` into the managed block.
+    ///
+    /// # Errors
+    ///
+    /// See [`crate::lua::save`] and [`crate::hyprlang::save`].
+    pub fn save(
+        self,
+        src: &str,
+        rules: &[MonitorRule],
+        options: &SaveOptions,
+    ) -> Result<Edit, ConfigError> {
+        match self {
+            Backend::Lua => crate::lua::save(src, rules),
+            Backend::Hyprlang => crate::hyprlang::save(src, rules, options),
+        }
+    }
+
+    /// Move rules from outside the block into it.
+    ///
+    /// # Errors
+    ///
+    /// See [`crate::lua::adopt`] and [`crate::hyprlang::adopt`].
+    pub fn adopt(self, src: &str, lines: &[usize]) -> Result<Edit, ConfigError> {
+        match self {
+            Backend::Lua => crate::lua::adopt(src, lines),
+            Backend::Hyprlang => crate::hyprlang::adopt(src, lines),
+        }
+    }
+
+    /// Remove the block markers.
+    ///
+    /// # Errors
+    ///
+    /// See [`crate::lua::unmanage`] and [`crate::hyprlang::unmanage`].
+    pub fn unmanage(self, src: &str) -> Result<Edit, ConfigError> {
+        match self {
+            Backend::Lua => crate::lua::unmanage(src),
+            Backend::Hyprlang => crate::hyprlang::unmanage(src),
+        }
+    }
+
+    /// The text of one rule in the language.
+    ///
+    /// # Errors
+    ///
+    /// See [`crate::lua::format_rule`] and [`crate::hyprlang::format_rule`].
+    pub fn format_rule(
+        self,
+        rule: &MonitorRule,
+        options: &SaveOptions,
+    ) -> Result<String, ConfigError> {
+        match self {
+            Backend::Lua => crate::lua::format_rule(rule),
+            Backend::Hyprlang => crate::hyprlang::format_rule(rule, options),
+        }
+    }
+}
+
 impl std::fmt::Display for Backend {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
@@ -90,6 +170,8 @@ pub struct ManagedBlock {
     pub end_line: usize,
     /// The rules in the block, in order.
     pub rules: Vec<MonitorRule>,
+    /// 1-based line where each rule starts, parallel to `rules`.
+    pub rule_lines: Vec<usize>,
 }
 
 /// Everything a backend knows about a file.
@@ -188,9 +270,29 @@ pub enum ConfigError {
         /// Why.
         reason: String,
     },
+    /// `adopt` would move rules past a rule that stays outside the block
+    /// and may concern the same monitor, which could change which rule
+    /// wins.
+    #[error(
+        "line {line}: this monitor rule stays outside the block but sits between rules \
+         being adopted, and moving them past it could change which rule wins; adopt the \
+         rules on each side of it separately, or move it by hand"
+    )]
+    AdoptCrossing {
+        /// 1-based line of the rule in the way.
+        line: usize,
+    },
     /// `unmanage` on a file without a block.
     #[error("the file has no managed block")]
     NoBlock,
+}
+
+/// What the backends need to know about the target Hyprland when writing.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SaveOptions {
+    /// The running Hyprland version, if known. hyprlang fields that need a
+    /// newer version are refused; unknown means everything is allowed.
+    pub hyprland: Option<crate::version::Version>,
 }
 
 #[cfg(test)]
@@ -225,6 +327,7 @@ mod tests {
                 begin_line: 1,
                 end_line: 2,
                 rules: vec![MonitorRule::new("DP-1")],
+                rule_lines: vec![2],
             }),
             outside: vec![
                 found("DP-1", true),
@@ -238,6 +341,28 @@ mod tests {
         assert!(doc.outside[0].is_adoptable());
         assert!(!doc.outside[2].is_adoptable());
         assert!(ConfigDocument::default().block_rules().is_empty());
+    }
+
+    #[test]
+    fn dispatch_by_backend() {
+        let lua = "hl.monitor({ output = \"DP-1\" })\n";
+        let conf = "monitor = DP-1, preferred, auto, 1\n";
+        let opts = SaveOptions::default();
+        for (backend, src) in [(Backend::Lua, lua), (Backend::Hyprlang, conf)] {
+            let doc = backend.parse(src).unwrap();
+            assert_eq!(doc.outside.len(), 1);
+            let adopted = backend.adopt(src, &[]).unwrap().content;
+            assert!(adopted.contains(backend.markers().begin));
+            let rules = backend.parse(&adopted).unwrap().block_rules().to_vec();
+            assert!(!backend.save(&adopted, &rules, &opts).unwrap().changed);
+            assert_eq!(backend.unmanage(&adopted).unwrap().content, src);
+            assert!(
+                backend
+                    .format_rule(&rules[0], &opts)
+                    .unwrap()
+                    .contains("DP-1")
+            );
+        }
     }
 
     #[test]
