@@ -132,6 +132,24 @@
   color: var(--md-default-fg-color--light);
 }
 
+/* ----------------------------------------------------------- announcement */
+
+.md-banner {
+  background: var(--ht-gradient);
+  color: #04121a;
+}
+
+.md-banner a,
+.md-banner a:hover {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.md-banner__button {
+  color: #04121a;
+}
+
 /* ------------------------------------------------------------- navigation */
 
 .md-nav__link--active {
@@ -195,8 +213,8 @@
 
 .md-typeset .ht-hero h1 {
   margin: 1.2rem auto 0.8rem;
-  max-width: 15ch;
-  font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+  max-width: 19ch;
+  font-size: clamp(2.1rem, 5.5vw, 3.6rem);
   line-height: 1.05;
   font-weight: 800;
   letter-spacing: -0.035em;
@@ -240,7 +258,7 @@
 
 .md-typeset .ht-window {
   margin: 2.5rem auto 0;
-  max-width: 44rem;
+  max-width: 50rem;
   overflow: hidden;
   border: 1px solid var(--ht-border);
   border-radius: var(--ht-radius);
@@ -292,6 +310,7 @@
 .md-typeset .ht-window pre > code {
   border-radius: 0;
   background: transparent;
+  font-size: 0.7rem;
 }
 
 /* ---------------------------------------------------------- feature cards */
@@ -357,4 +376,23 @@
   .md-typeset .ht-actions .md-button {
     transition: none;
   }
+}
+
+/* ------------------------------------------------------------ refinements */
+
+[data-md-color-scheme="slate"] .md-typeset .ht-hero h1 {
+  color: #f4f7fb;
+}
+
+/* Eight feature cards: two rows of four on wide screens. */
+@media screen and (min-width: 76.25em) {
+  .md-typeset .grid.cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.md-typeset .ht-window__bar em {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
