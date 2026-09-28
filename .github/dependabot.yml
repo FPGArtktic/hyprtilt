@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Weekly dependency updates. Commit subjects follow CONTRIBUTING.md
+# ("build: ..." for crates, "ci: ..." for actions); the maintainer adds the
+# sign-off when rebasing the pull request. The build image pins are updated
+# by hand (see "Build image" in CONTRIBUTING.md): its FROM line uses build
+# arguments, which Dependabot does not follow.
+
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "build"
+    groups:
+      crates:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
