@@ -12,6 +12,8 @@
 #![deny(missing_docs)]
 
 pub mod block;
+pub mod document;
+pub mod ipc;
 pub mod lua;
 pub mod model;
 
