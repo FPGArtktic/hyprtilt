@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Read the Docs build of the documentation site in docs/ (MkDocs with the
+# Material theme, warnings are errors). The same build runs in the build
+# image as "just docs", and CI runs it on every push and pull request.
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.13"
+
+mkdocs:
+  configuration: mkdocs.yml
+  fail_on_warning: true
+
+python:
+  install:
+    # Exact versions with hashes, generated from docs/requirements.in.
+    - requirements: docs/requirements.txt

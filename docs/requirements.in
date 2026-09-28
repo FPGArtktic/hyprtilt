@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# Direct dependencies of the documentation build. The pinned and hashed set
+# that Read the Docs installs is requirements.txt; regenerate it from the
+# repository root with uv 0.12 or later after changing this file:
+#
+#   { sed -n '1,/^$/p' docs/requirements.txt
+#     uv pip compile --quiet --universal --python-version 3.13 \
+#         --generate-hashes --no-header docs/requirements.in
+#   } >docs/requirements.txt.new && mv docs/requirements.txt.new docs/requirements.txt
+#
+# Licenses: MkDocs BSD-2-Clause, Material for MkDocs MIT, PyMdown Extensions
+# MIT. Their dependencies are MIT, BSD, Apache-2.0 or PSF-2.0. Only the
+# theme's style sheets, scripts and fonts end up in the built site.
+
+mkdocs>=1.6.1,<2
+mkdocs-material>=9.7,<10
