@@ -155,6 +155,11 @@ pkg-test:
 dist: pkg-deb pkg-rpm
     scripts/dist.sh
 
+# Record the demo GIF of the terminal interface into docs/assets/demo.gif (needs vhs).
+demo:
+    cargo build --release --locked -p hyprtilt
+    vhs docs/demo.tape
+
 # Changelog in Keep a Changelog form from the commit history.
 changelog:
     git-cliff --output CHANGELOG.md
