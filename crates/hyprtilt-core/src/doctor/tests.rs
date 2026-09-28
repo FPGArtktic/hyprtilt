@@ -196,3 +196,30 @@ fn syntax_checker_and_status_order() {
     let json = serde_json::to_string(&diagnose(&facts)[0]).unwrap();
     assert!(json.contains("\"status\":\"ok\""), "{json}");
 }
+
+#[test]
+fn rules_that_win_over_the_block() {
+    let mut facts = healthy();
+    let adopted = crate::lua::adopt(HYPR_USER, &[]).unwrap().content;
+    facts.target_content = Ok(Some(format!(
+        "{adopted}hl.monitor({{ output = \"desc:Samsung Electric Company Odyssey G50F SERIAL0002\", scale = 2 }})\n"
+    )));
+    let checks = diagnose(&facts);
+    let found = find(&checks, "shadowing-rule");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0].title.contains("also applies to DP-1"),
+        "{}",
+        found[0].title
+    );
+    // In hyprlang a monitorv2 block wins wherever it is.
+    let mut facts = healthy();
+    facts.target.backend = Backend::Hyprlang;
+    if let Ok(live) = &mut facts.hyprland {
+        live.provider = Some("hyprlang".to_owned());
+    }
+    facts.target_content = Ok(Some(
+        "monitorv2 {\n  output = desc:Samsung Electric Company Odyssey G50F SERIAL0002\n}\n# BEGIN hyprtilt (managed)\nmonitor = DP-1, preferred, auto, 1\n# END hyprtilt\n".to_owned(),
+    ));
+    assert_eq!(find(&diagnose(&facts), "shadowing-rule").len(), 1);
+}

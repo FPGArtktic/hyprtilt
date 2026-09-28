@@ -135,6 +135,7 @@ pub fn diagnose(facts: &Facts) -> Vec<Check> {
     if let Some(live) = live {
         errors(facts, live, &mut out);
         if let Some(doc) = &doc {
+            shadowing(facts.target.backend, doc, live, &mut out);
             live_state(doc, live, &mut out);
         }
     }
@@ -440,6 +441,46 @@ fn errors(facts: &Facts, live: &Live, out: &mut Vec<Check>) {
         ),
         Some(live.config_errors.join("\n")),
     ));
+}
+
+/// Rules outside the block with another selector that apply to the same
+/// monitor and are evaluated after the block's rule, so they win: in Lua
+/// and for `monitor=` lines, those after the block; in hyprlang, every
+/// `monitorv2` block, which Hyprland applies after all `monitor=` lines.
+fn shadowing(backend: Backend, doc: &ConfigDocument, live: &Live, out: &mut Vec<Check>) {
+    let Some(block) = &doc.block else {
+        return;
+    };
+    for m in &live.monitors {
+        let Some(own) = block
+            .rules
+            .iter()
+            .rev()
+            .find(|r| r.output.matches(&m.name, &m.description))
+        else {
+            continue;
+        };
+        for f in &doc.outside {
+            let Some(rule) = &f.rule else {
+                continue;
+            };
+            let v2 = backend == Backend::Hyprlang && f.text.trim_start().starts_with("monitorv2");
+            let later = f.line > block.end_line || v2;
+            if later && rule.output != own.output && rule.output.matches(&m.name, &m.description) {
+                out.push(check(
+                    "shadowing-rule",
+                    Status::Warn,
+                    format!(
+                        "line {}: the rule for {:?} also applies to {} and wins over the block's rule",
+                        f.line,
+                        rule.output.as_str(),
+                        m.name
+                    ),
+                    Some("adopt it or remove it; changes to the block cannot take effect".to_owned()),
+                ));
+            }
+        }
+    }
 }
 
 fn live_state(doc: &ConfigDocument, live: &Live, out: &mut Vec<Check>) {
