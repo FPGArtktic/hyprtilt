@@ -10,11 +10,12 @@ description: Install hyprtilt from the AUR, a .deb or .rpm package, with Cargo, 
 hyprtilt is one static binary without runtime dependencies. It runs on
 x86_64 and aarch64 Linux.
 
-!!! note "No release yet"
+!!! tip "Latest release"
 
-    hyprtilt has not been released. Until `v0.1.0` exists, build it from
-    source or with the `hyprtilt-git` recipe; the release packages below
-    describe what every release will provide.
+    The packages below are attached to
+    [every release](https://github.com/FPGArtktic/hyprtilt/releases/latest);
+    `v0.1.0` is the current one. The AUR recipes are in the repository and
+    are not published to the AUR yet.
 
 ## Arch Linux (AUR)
 
@@ -44,13 +45,15 @@ static, so the package installs on older releases as well (tested on
 Ubuntu 22.04, Ubuntu 24.04 and Debian 12):
 
 ```sh
-sudo apt install ./hyprtilt_<version>_amd64.deb
+curl -LO https://github.com/FPGArtktic/hyprtilt/releases/download/v0.1.0/hyprtilt_0.1.0-1_amd64.deb
+sudo apt install ./hyprtilt_0.1.0-1_amd64.deb
 ```
 
 ## Fedora and other RPM systems
 
 ```sh
-sudo dnf install ./hyprtilt-<version>-1.x86_64.rpm
+curl -LO https://github.com/FPGArtktic/hyprtilt/releases/download/v0.1.0/hyprtilt-0.1.0-1.x86_64.rpm
+sudo dnf install ./hyprtilt-0.1.0-1.x86_64.rpm
 ```
 
 ## Release archives

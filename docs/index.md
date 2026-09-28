@@ -11,7 +11,7 @@ hide:
 
 <div class="ht-hero" markdown>
 
-<span class="ht-pill"><span class="ht-dot"></span>Hyprland 0.55+ Lua &middot; hyprlang &middot; Caelestia</span>
+<span class="ht-pill"><span class="ht-dot"></span>v0.1.0 &middot; Hyprland 0.55+ Lua &middot; hyprlang &middot; Caelestia</span>
 
 # Arrange your monitors. <span class="ht-gradient-text">Keep your config.</span>
 
@@ -140,8 +140,11 @@ flowchart LR
     confirm -- no --> rollback
 ```
 
-!!! info "Status"
+!!! success "Status"
 
-    hyprtilt works and has no release yet: build it from source or with the
-    `hyprtilt-git` recipe ([Installation](guide/installation.md)). See the
-    [roadmap](project/roadmap.md) for what is left before `v0.1.0`.
+    **v0.1.0 is released.** Binaries, `.deb`, `.rpm`, a vendored source
+    tarball, an SBOM and signed checksums are attached to the
+    [release](https://github.com/FPGArtktic/hyprtilt/releases/latest); see
+    [Installation](guide/installation.md). `list`, `doctor`, `adopt` and
+    `unmanage` were checked against a real Hyprland 0.56.2 session with a
+    Caelestia configuration.
