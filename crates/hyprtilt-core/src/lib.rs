@@ -11,6 +11,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod lua;
+
 /// Version of the crate, as declared in `Cargo.toml`.
 ///
 /// # Examples
