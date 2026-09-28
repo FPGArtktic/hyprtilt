@@ -46,7 +46,7 @@ cov:
     cargo llvm-cov --workspace --all-targets --locked --no-report
     cargo llvm-cov report --lcov --output-path lcov.info
     cargo llvm-cov report --json --summary-only --output-path coverage.json
-    python3 scripts/check-coverage.py coverage.json
+    python3 scripts/check-coverage.py coverage.json --badge coverage-badge.json
 
 # Check that the workspace builds with the minimum supported Rust version.
 msrv:

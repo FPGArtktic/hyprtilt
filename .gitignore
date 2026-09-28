@@ -10,6 +10,7 @@ CLAUDE.md
 *.profraw
 lcov.info
 coverage.json
+coverage-badge.json
 
 # Editors.
 *.swp

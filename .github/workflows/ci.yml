@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
-      contents: read
+      contents: write # publish the coverage badge to the badges branch
       packages: read
     container:
       image: ghcr.io/fpgartktic/hyprtilt-build@sha256:c479dd766fe1014d09fc522ff6bc8a451a5eb31f062069be7297676641b81587
@@ -84,6 +84,28 @@ jobs:
           files: lcov.info
           token: ${{ env.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+      # The badge lives on an orphan "badges" branch, so the README needs no
+      # third-party service and the branch never appears in the history of
+      # main. Pushes made with GITHUB_TOKEN start no workflow run.
+      - name: Publish the coverage badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          work="$(mktemp -d)"
+          cp coverage-badge.json "$work/coverage.json"
+          cd "$work"
+          git init --quiet --initial-branch=badges
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage.json
+          git commit --quiet -m "coverage of ${SHA}"
+          git push --force --quiet \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git" badges
 
       - name: Keep coverage report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

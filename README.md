@@ -4,9 +4,12 @@
 # hyprtilt
 
 [![CI](https://github.com/FPGArtktic/hyprtilt/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FPGArtktic/hyprtilt/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/FPGArtktic/hyprtilt?include_prereleases)](https://github.com/FPGArtktic/hyprtilt/releases/latest)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FFPGArtktic%2Fhyprtilt%2Fbadges%2Fcoverage.json)](https://github.com/FPGArtktic/hyprtilt/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/readthedocs/hyprtilt)](https://hyprtilt.readthedocs.io)
 [![MSRV](https://img.shields.io/badge/rust-1.88%2B-blue?logo=rust)](Cargo.toml)
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue)](LICENSE)
+[![AUR](https://img.shields.io/aur/version/hyprtilt-git?label=AUR%20hyprtilt-git)](https://aur.archlinux.org/packages/hyprtilt-git)
 [![Platform](https://img.shields.io/badge/platform-linux%20amd64%20%7C%20arm64-lightgrey)](#installation)
 ![Made in Poland](https://img.shields.io/badge/made%20in-Poland-DC143C?labelColor=white)
 
