@@ -7,7 +7,7 @@
 use std::process::ExitCode;
 
 /// Why hyprtilt exits.
-// Most codes are returned by commands that are not implemented yet.
+// Usage (2) is returned by clap itself and never constructed here.
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Exit {

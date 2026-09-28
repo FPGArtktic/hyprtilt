@@ -33,6 +33,9 @@ module_name_repetitions = "allow"
 # Scales and refresh rates are compared as the exact values Hyprland and
 # hyprtilt write; where a tolerance matters it is applied explicitly.
 float_cmp = "allow"
+# Text reports are built with push_str(&format!(..)); write! would need an
+# ignored Result on every line for no benefit.
+format_push_string = "allow"
 # Tests quote Lua and hyprlang snippets full of double quotes; one style of
 # raw string for all of them reads better than the minimal number of hashes.
 needless_raw_string_hashes = "allow"
