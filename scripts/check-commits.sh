@@ -8,7 +8,9 @@
 #     characters, no trailing period, followed by an empty line;
 #   * body lines at most 75 columns, except trailers and URLs;
 #   * a Signed-off-by trailer of the commit author (DCO);
-#   * no merge commits (history is rebased).
+#   * no merge commits (history is rebased), except the one GitHub's merge
+#     button creates for a pull request: its message is GitHub's, and the
+#     commits it brings in are in the range and checked themselves.
 #
 # Usage: scripts/check-commits.sh [BASE]   (default: origin/main)
 # A BASE that does not exist (first push) checks every commit of HEAD.
@@ -43,6 +45,11 @@ for c in $commits; do
     message="$(git log -1 --format=%B "$c")"
 
     if [[ "$(git rev-list --parents -n 1 "$c" | wc -w)" -gt 2 ]]; then
+        committer="$(git log -1 --format='%cn <%ce>' "$c")"
+        if [[ "$committer" == "GitHub <noreply@github.com>" &&
+            "$subject" =~ ^Merge\ pull\ request\ \#[0-9]+\ from\  ]]; then
+            continue
+        fi
         fail "$short" "merge commit; rebase instead"
     fi
     if ! [[ "$subject" =~ ^($areas):\ [^[:space:]] ]]; then

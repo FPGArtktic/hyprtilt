@@ -152,7 +152,10 @@ Signed-off-by: Your Name <you@example.org>
   (trailers and URLs may be longer).
 - Sign off every commit (`git commit -s`). The sign-off must match the
   commit author.
-- Rebase, never merge. Squash review fixups into the commits they fix.
+- Rebase, never merge: update a branch by rebasing it on `main`. Squash
+  review fixups into the commits they fix. The only merge commits are
+  the ones GitHub's merge button creates for pull requests; their message
+  is GitHub's and is not checked, while every commit they bring in is.
 
 ### Areas
 
