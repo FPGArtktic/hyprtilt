@@ -19,7 +19,7 @@ how to test it and which decisions were made.
 | 4. Apply and the rest of the TUI | Apply with countdown and rollback, modes, refresh rates, scale, VRR, snapping, profiles, adoption | :material-check-circle:{ style="color: #00c781" } done |
 | 5. CLI | All subcommands, `--json`, `--dry-run`, exit codes, man page, completions | :material-check-circle:{ style="color: #00c781" } done |
 | 6. Packaging and documentation | AUR, `.deb`, `.rpm`, release workflow, this site | :material-check-circle:{ style="color: #00c781" } done |
-| 7. Release | Checks on real hardware ([open questions](../hyprland-lua-api.md#13-open-questions-and-facts-that-need-runtime-confirmation)), demo GIF, `v0.1.0`, AUR and crates.io | :material-circle-outline: planned |
+| 7. Release | `v0.1.0`, checks on real hardware, demo GIF | :material-check-circle:{ style="color: #00c781" } done (AUR and crates.io await the maintainer) |
 
 ## Non-goals for 0.x
 

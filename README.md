@@ -20,12 +20,13 @@ The Lua backend needs Hyprland 0.55 or newer, which is where the Lua
 configuration arrived; the hyprlang backend covers the older versions that
 Ubuntu and Debian still ship.
 
-> [!IMPORTANT]
-> **hyprtilt works but has no release yet.** The terminal interface and
-> every command are implemented and tested against an in-memory Hyprland;
-> a few behaviours still need confirming on real hardware (see
-> [open questions](#status)). Build it from source or with the
-> `hyprtilt-git` recipe until `v0.1.0`.
+> [!NOTE]
+> **v0.1.0 is the first release.** Everything described below is
+> implemented and tested; `list`, `doctor`, `adopt` and `unmanage` were also
+> checked against a real Hyprland 0.56.2 session with a Caelestia
+> configuration. A few Hyprland behaviours are still marked as needing
+> confirmation on other hardware in the
+> [API notes](docs/hyprland-lua-api.md).
 
 ## Contents
 
@@ -212,16 +213,16 @@ git clone https://github.com/FPGArtktic/hyprtilt
 cd hyprtilt/packaging/aur/hyprtilt-git && makepkg -si
 ```
 
-**Debian, Ubuntu and derivatives.** Once releases start, a `.deb` will be
-attached to every release; the binary is static, so it installs on older
-LTS releases too (tested on Ubuntu 22.04, Ubuntu 24.04 and Debian 12).
+**Debian, Ubuntu and derivatives.** A `.deb` is attached to every release;
+the binary is static, so it installs on older LTS releases too (tested on
+Ubuntu 22.04, Ubuntu 24.04 and Debian 12).
 
 ```sh
 sudo apt install ./hyprtilt_<version>_amd64.deb
 ```
 
-**Fedora and other RPM systems.** An `.rpm` will be attached as well (tested
-on Fedora 43).
+**Fedora and other RPM systems.** An `.rpm` is attached as well (tested on
+Fedora 43).
 
 ```sh
 sudo dnf install ./hyprtilt-<version>-1.x86_64.rpm
@@ -230,7 +231,7 @@ sudo dnf install ./hyprtilt-<version>-1.x86_64.rpm
 **Cargo.**
 
 ```sh
-cargo install hyprtilt        # once it is published
+cargo install hyprtilt
 ```
 
 After installing, `hyprtilt --version` prints the version.
