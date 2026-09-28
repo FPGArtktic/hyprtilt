@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+
+[workspace]
+resolver = "3"
+members = ["crates/hyprtilt-core", "crates/hyprtilt"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+# Keep in sync with RUST_MSRV in containers/build/Containerfile and the README badge.
+rust-version = "1.88"
+license = "GPL-3.0-only"
+authors = ["Mateusz Okulanis <FPGArtktic@outlook.com>"]
+repository = "https://github.com/FPGArtktic/hyprtilt"
+homepage = "https://github.com/FPGArtktic/hyprtilt"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+# pedantic is enabled as a group; the few lints that only produce noise for
+# this code base are allowed explicitly below, each with a reason.
+pedantic = { level = "warn", priority = -1 }
+# Geometry works with i32 pixel coordinates and f64 scales; the casts are
+# checked where it matters and would otherwise need an allow on every line.
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+module_name_repetitions = "allow"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

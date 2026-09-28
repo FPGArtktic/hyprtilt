@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+
+[package]
+name = "hyprtilt"
+description = "TUI and CLI for Hyprland monitor layout that edits your Lua or hyprlang config in place"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["hyprland", "monitor", "tui", "wayland"]
+categories = ["command-line-utilities", "config"]
+
+[dependencies]
+hyprtilt-core = { version = "0.1.0", path = "../hyprtilt-core" }
+
+[lints]
+workspace = true

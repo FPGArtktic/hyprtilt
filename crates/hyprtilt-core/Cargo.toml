@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+
+[package]
+name = "hyprtilt-core"
+description = "Core library of hyprtilt: monitor model, geometry, Lua and hyprlang config editing, Hyprland IPC"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["hyprland", "monitor", "wayland", "config"]
+categories = ["config", "os::linux-apis"]
+
+[dependencies]
+
+[lints]
+workspace = true
