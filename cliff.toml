@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Mateusz Okulanis <FPGArtktic@outlook.com>
+#
+# git-cliff configuration: CHANGELOG.md in the Keep a Changelog format,
+# generated from the commit history ("just changelog", and by the release
+# workflow for the release notes).
+#
+# Commits follow the kernel style "area: description" (CONTRIBUTING.md),
+# not Conventional Commits, so the sections are derived from the subject:
+# a Fixes: trailer means Fixed, "add"/"support" means Added, "remove"
+# means Removed, anything else is Changed. Changes to CI, the build
+# tooling and the documentation do not affect users and are left out.
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to hyprtilt are documented in this file. The format is
+based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
+project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+"""
+body = """
+{%- if version -%}
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else -%}
+## [Unreleased]
+{% endif -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {{ commit.message | split(pat="\n") | first | trim }}\
+{% endfor %}
+{% endfor %}
+"""
+trim = false
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+sort_commits = "oldest"
+commit_parsers = [
+    { message = "^(ci|build|docs):", skip = true },
+    { body = "(?m)^Fixes: [0-9a-f]{12} ", group = "<!-- 3 -->Fixed" },
+    { message = "^[a-z]+: (add|support|implement|introduce)", group = "<!-- 0 -->Added" },
+    { message = "^[a-z]+: (remove|drop|delete)", group = "<!-- 2 -->Removed" },
+    { message = ".*", group = "<!-- 1 -->Changed" },
+]

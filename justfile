@@ -151,6 +151,14 @@ pkg-test:
             bash /src/scripts/test-package-install.sh rpm "/src/$rpm"
     done
 
+# Release artifacts in dist/: archives, vendored source, SBOM, SHA256SUMS.
+dist: pkg-deb pkg-rpm
+    scripts/dist.sh
+
+# Changelog in Keep a Changelog form from the commit history.
+changelog:
+    git-cliff --output CHANGELOG.md
+
 # Build the build image.
 image:
     podman build -f containers/build/Containerfile -t {{ image }} .
