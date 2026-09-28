@@ -139,7 +139,11 @@ jobs:
       - name: Check subjects and sign-offs
         env:
           BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-        run: just commits "$BASE"
+        run: |
+          # The job runs as root in the container, the checkout belongs to
+          # the runner user, so git would refuse the repository otherwise.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          just commits "$BASE"
 
   aarch64:
     name: test (aarch64)
