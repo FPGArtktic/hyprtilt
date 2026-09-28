@@ -16,3 +16,6 @@ coverage.json
 *~
 .idea/
 .vscode/
+
+# Worktrees and state of local tools.
+.claude/
