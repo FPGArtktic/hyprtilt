@@ -131,7 +131,7 @@ line, in the comment syntax of the file:
 ## Commit messages
 
 The rules follow the kernel's `Documentation/process/submitting-patches.rst`.
-`just commits` checks them, and CI runs it on every push and pull request.
+`just commits` checks them, and CI runs it on pull requests.
 
 ### Format
 
