@@ -234,12 +234,6 @@ Fedora 43).
 sudo dnf install ./hyprtilt-<version>-1.x86_64.rpm
 ```
 
-**Cargo.**
-
-```sh
-cargo install hyprtilt
-```
-
 After installing, `hyprtilt --version` prints the version.
 
 ## Building from source

@@ -1,5 +1,5 @@
 ---
-description: Install hyprtilt from the AUR, a .deb or .rpm package, with Cargo, or from source.
+description: Install hyprtilt from the AUR, a .deb or .rpm package, a release archive, or from source.
 ---
 
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
@@ -72,14 +72,6 @@ cosign verify-blob --bundle SHA256SUMS.cosign.bundle \
   --certificate-identity-regexp '^https://github.com/FPGArtktic/hyprtilt/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   SHA256SUMS
-```
-
-## Cargo
-
-Once published to crates.io:
-
-```sh
-cargo install --locked hyprtilt
 ```
 
 ## From source
