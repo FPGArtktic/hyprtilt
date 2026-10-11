@@ -6,7 +6,7 @@
 
 use std::collections::HashSet;
 
-use hyprtilt_core::geometry::format_scale;
+use hyprtilt_core::geometry::{self, Rect, format_scale};
 use hyprtilt_core::layout::{Layout, Problem};
 use hyprtilt_core::model::format_refresh;
 use ratatui::buffer::Buffer;
@@ -23,7 +23,8 @@ const ROW: f64 = 2.0;
 /// Where the monitors are on the screen.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Placement {
-    /// Each active output's index and cells; the selected one last.
+    /// Each drawn output's index and cells: the disabled ones first,
+    /// the selected one last.
     pub(crate) boxes: Vec<(usize, Area)>,
     /// Logical pixels per column; a row is [`ROW`] columns tall.
     pub(crate) per_column: f64,
@@ -48,33 +49,37 @@ impl Placement {
     }
 }
 
-/// Fit the active outputs of `layout` into `area`, keeping proportions
-/// and leaving a margin of one cell.
+/// Fit the outputs of `layout` into `area`, keeping proportions and
+/// leaving a margin of one cell. A disabled output is placed where
+/// `Layout::landing_rects` says it would land, so that it keeps its place
+/// on the canvas instead of disappearing from it.
 pub(crate) fn place(layout: &Layout, area: Area, selected: usize) -> Placement {
     let mut rects = layout.rects();
+    rects.extend(layout.landing_rects());
     let empty = Placement {
         boxes: Vec::new(),
         per_column: 1.0,
     };
-    if rects.is_empty() || area.width < 6 || area.height < 4 {
+    let only: Vec<Rect> = rects.iter().map(|(_, r)| *r).collect();
+    let Some(bounds) = geometry::bounds(&only) else {
+        return empty;
+    };
+    if area.width < 6 || area.height < 4 {
         return empty;
     }
-    let left = rects.iter().map(|(_, r)| r.x).min().unwrap_or(0);
-    let top = rects.iter().map(|(_, r)| r.y).min().unwrap_or(0);
-    let right = rects.iter().map(|(_, r)| r.right()).max().unwrap_or(0);
-    let bottom = rects.iter().map(|(_, r)| r.bottom()).max().unwrap_or(0);
     let columns = f64::from(area.width - 2);
     let rows = f64::from(area.height - 2);
-    let (width, height) = (f64::from(right - left), f64::from(bottom - top));
+    let (width, height) = (f64::from(bounds.w), f64::from(bounds.h));
     let per_column = (width / columns).max(height / (rows * ROW)).max(1.0);
     let used_columns = ((width / per_column).round() as u16).min(area.width - 2);
     let used_rows = ((height / (per_column * ROW)).round() as u16).min(area.height - 2);
     let x0 = area.x + 1 + (area.width - 2 - used_columns) / 2;
     let y0 = area.y + 1 + (area.height - 2 - used_rows) / 2;
-    let column = |x: i32| x0 + (f64::from(x - left) / per_column).round() as u16;
-    let row = |y: i32| y0 + (f64::from(y - top) / (per_column * ROW)).round() as u16;
-    // The selected output is drawn last, on top of any overlap.
-    rects.sort_by_key(|(i, _)| *i == selected);
+    let column = |x: i32| x0 + (f64::from(x - bounds.x) / per_column).round() as u16;
+    let row = |y: i32| y0 + (f64::from(y - bounds.y) / (per_column * ROW)).round() as u16;
+    // Disabled outputs are drawn first and the selected one last, so that
+    // neither hides the selection and `hit` prefers an active output.
+    rects.sort_by_key(|(i, _)| (*i == selected, layout.is_active(*i)));
     let boxes = rects
         .into_iter()
         .filter_map(|(i, r)| {
@@ -135,7 +140,7 @@ impl Canvas<'_> {
 impl Widget for Canvas<'_> {
     fn render(self, area: Area, buf: &mut Buffer) {
         if self.placement.boxes.is_empty() {
-            Paragraph::new("no active monitor")
+            Paragraph::new("no monitor to draw")
                 .alignment(Alignment::Center)
                 .render(area, buf);
             return;

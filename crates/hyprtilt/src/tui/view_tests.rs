@@ -128,7 +128,7 @@ fn tiny_terminals_do_not_break() {
     let mut empty = app();
     empty.layout.outputs.clear();
     let (text, _) = render(&empty, 80, 24);
-    assert!(text.contains("no active monitor"));
+    assert!(text.contains("no monitor to draw"));
     assert!(text.contains("no monitors"));
 }
 
@@ -152,6 +152,50 @@ fn boxes_keep_their_proportions() {
     assert_eq!(cells(1).right(), cells(2).x);
     assert_eq!(placement.hit(cells(2).x, cells(2).y), Some(2));
     assert_eq!(placement.hit(0, 0), None);
+}
+
+/// The cells of output `i`, which must be drawn.
+fn cells(placement: &Placement, i: usize) -> ratatui::layout::Rect {
+    placement.boxes.iter().find(|(k, _)| *k == i).unwrap().1
+}
+
+#[test]
+fn a_disabled_monitor_keeps_its_box() {
+    let mut a = app();
+    let (_, before) = render(&a, 120, 40);
+    type_keys(&mut a, "1e");
+    let (text, after) = render(&a, 120, 40);
+    assert_eq!(after.boxes.len(), 3, "the disabled monitor is still drawn");
+    assert_eq!(
+        cells(&after, 0),
+        cells(&before, 0),
+        "and it does not move:\n{text}"
+    );
+    let box0 = cells(&after, 0);
+    assert_eq!(
+        after.hit(box0.x + box0.width / 2, box0.y + box0.height / 2),
+        Some(0),
+        "the mouse can select it"
+    );
+    assert!(text.contains("HDMI-A-1"), "{text}");
+}
+
+#[test]
+fn a_disabled_monitor_without_a_position_goes_beside_the_layout() {
+    let mut a = app();
+    type_keys(&mut a, "3e");
+    // Hyprland arranges no disabled output, so it reports the origin.
+    a.layout.outputs[2].rule.position = None;
+    a.layout.outputs[2].info.x = 0;
+    a.layout.outputs[2].info.y = 0;
+    let (text, placement) = render(&a, 120, 40);
+    assert_eq!(placement.boxes.len(), 3);
+    let (edp, dp) = (cells(&placement, 1), cells(&placement, 2));
+    assert!(dp.x >= edp.right(), "{:?}\n{text}", placement.boxes);
+    assert_eq!(
+        placement.hit(dp.x + dp.width / 2, dp.y + dp.height / 2),
+        Some(2)
+    );
 }
 
 #[test]
