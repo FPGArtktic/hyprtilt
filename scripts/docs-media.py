@@ -80,6 +80,9 @@ STEPS = [
     ("2", "select eDP-1", 1200, None),
     ("kkkk", "move it up by 40 px", 1400, None),
     ("b", "align its bottom edge with the nearest neighbour", 1800, None),
+    ("3", "select DP-1 again", 1200, None),
+    ("e", "switch it off: the monitor keeps its place, hatched", 2600, "disabled"),
+    ("e", "and on again", 1600, None),
     ("a", "apply live: verified, then counted down", 2600, "countdown"),
     ("y", "keep it", 1800, None),
     ("w", "write the block into the file (already running: no countdown)", 2600, None),
@@ -91,17 +94,29 @@ STEPS = [
 KEY_NAMES = {"\x1b": "Esc", "": ""}
 
 
+# The media are recorded in one font, so that every image looks the same.
+# A patched build (the Powerline one, for example) carries the same
+# glyphs and metrics and is accepted; anything else fontconfig would
+# substitute is not, because its box drawing does not join up.
+FONTS = ("DejaVu Sans Mono", "DejaVu Sans Mono for Powerline")
+
+
 def font_file(bold):
-    name = "DejaVu Sans Mono:bold" if bold else "DejaVu Sans Mono"
-    try:
-        out = subprocess.run(
-            ["fc-match", "-f", "%{file}", name], capture_output=True, text=True, check=True
-        ).stdout
-    except (OSError, subprocess.CalledProcessError):
-        out = ""
-    if not out or not Path(out).exists():
-        sys.exit(f"docs-media: no font for {name!r}; install DejaVu Sans Mono")
-    return out
+    for name in FONTS:
+        query = f"{name}:bold" if bold else name
+        try:
+            out = subprocess.run(
+                ["fc-match", "-f", "%{file}\t%{family}", query],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        path, _, family = out.partition("\t")
+        if "DejaVu" in family and path and Path(path).exists():
+            return path
+    sys.exit("docs-media: no DejaVu Sans Mono; install ttf-dejavu")
 
 
 class Terminal:

@@ -59,7 +59,9 @@ Below 80 columns the monitor panel moves under the layout.
 ### Monitors that are off
 
 A monitor disabled by its rule is drawn where it belongs, hatched and
-grey, with its name, `disabled` and the size it would have.
+grey, with its name, `disabled` and the size it would have:
+
+![DP-1 switched off: its box is hatched and grey, the footer offers e to enable it](../assets/screenshots/disabled.png)
 
 ++e++ switches the selected monitor off and on again. It is refused for
 the last monitor still in the layout, because a session with no monitor
