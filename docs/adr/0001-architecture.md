@@ -536,8 +536,10 @@ decisions above.
 ## Non-goals for 0.x
 
 A hotplug or lid daemon, workspace planning, integrations with panels
-(Omarchy), other compositors, packages beyond Arch, Debian/Ubuntu, RPM and
-cargo.
+(Omarchy), other compositors, packages beyond Arch, Debian/Ubuntu and RPM.
+The crates are not published to crates.io: hyprtilt is a program, not a
+library anyone depends on, and an unpublished name is one less thing to
+keep in step with every release.
 
 ## Consequences
 
