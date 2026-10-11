@@ -198,6 +198,40 @@ fn a_disabled_monitor_without_a_position_goes_beside_the_layout() {
     );
 }
 
+/// The text inside `cells` of a rendered screen.
+fn inside(text: &str, cells: ratatui::layout::Rect) -> String {
+    text.lines()
+        .skip(usize::from(cells.y))
+        .take(usize::from(cells.height))
+        .map(|line| {
+            line.chars()
+                .skip(usize::from(cells.x))
+                .take(usize::from(cells.width))
+                .collect::<String>()
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+#[test]
+fn a_disabled_monitor_is_hatched() {
+    let mut a = app();
+    type_keys(&mut a, "1e");
+    let (text, placement) = render(&a, 120, 40);
+    let box0 = inside(&text, cells(&placement, 0));
+    assert!(box0.contains('░'), "{box0}");
+    assert!(box0.contains("disabled"), "{box0}");
+    assert!(
+        !inside(&text, cells(&placement, 1)).contains('░'),
+        "an enabled monitor is not hatched:\n{text}"
+    );
+    // The hatching stays once the selection moves away.
+    type_keys(&mut a, "2");
+    let (text, placement) = render(&a, 120, 40);
+    let box0 = inside(&text, cells(&placement, 0));
+    assert!(box0.contains('░') && box0.contains("disabled"), "{box0}");
+}
+
 #[test]
 fn the_help_lists_every_key() {
     let mut a = app();

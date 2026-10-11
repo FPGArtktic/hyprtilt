@@ -135,6 +135,34 @@ impl Canvas<'_> {
         }
         lines
     }
+
+    /// The label of a monitor that is off: its name, that it is disabled
+    /// and the size it would have. Each line carries its own style, so
+    /// that the hatching underneath keeps its colour.
+    fn off_lines(&self, i: usize, selected: bool) -> Vec<Line<'static>> {
+        let o = &self.layout.outputs[i];
+        let (w, h) = self.layout.pixels(i);
+        let off = Style::new().fg(Color::DarkGray);
+        vec![
+            Line::styled(
+                o.info.name.clone(),
+                Style::new()
+                    .fg(if selected { Color::Cyan } else { Color::Gray })
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Line::styled("disabled", off),
+            Line::styled(format!("{w}x{h}"), off),
+        ]
+    }
+}
+
+/// Fill `area` with light hatching, for a monitor that is off.
+fn hatch(area: Area, buf: &mut Buffer) {
+    let style = Style::new().fg(Color::DarkGray);
+    let row = "░".repeat(usize::from(area.width));
+    for y in area.top()..area.bottom() {
+        buf.set_string(area.x, y, &row, style);
+    }
 }
 
 impl Widget for Canvas<'_> {
@@ -147,12 +175,15 @@ impl Widget for Canvas<'_> {
         }
         let overlapping = self.overlapping();
         for (i, cells) in &self.placement.boxes {
-            let name = &self.layout.outputs[*i].info.name;
+            let output = &self.layout.outputs[*i];
             let selected = *i == self.selected;
-            let color = if overlapping.contains(name) {
+            let disabled = output.rule.is_disabled();
+            let color = if overlapping.contains(&output.info.name) {
                 Color::Red
             } else if selected {
                 Color::Cyan
+            } else if disabled {
+                Color::DarkGray
             } else {
                 Color::Gray
             };
@@ -166,11 +197,20 @@ impl Widget for Canvas<'_> {
             let inner = block.inner(*cells);
             Clear.render(*cells, buf);
             block.render(*cells, buf);
-            let mut text = self.lines(*i);
+            if disabled {
+                hatch(inner, buf);
+            }
+            let mut text = if disabled {
+                self.off_lines(*i, selected)
+            } else {
+                self.lines(*i)
+            };
             text.truncate(usize::from(inner.height));
             Paragraph::new(text)
                 .alignment(Alignment::Center)
-                .style(if selected {
+                // A paragraph style would repaint the hatching, so a
+                // disabled monitor styles its lines one by one.
+                .style(if selected && !disabled {
                     Style::new().fg(Color::Cyan)
                 } else {
                     Style::new()
