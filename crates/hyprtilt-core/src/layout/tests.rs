@@ -225,6 +225,29 @@ fn moving_snapping_and_aligning() {
 }
 
 #[test]
+fn a_disabled_output_keeps_its_rectangle() {
+    let mut l = layout();
+    let dp = l.index("DP-1").unwrap();
+    let before = rect_of(&l, "DP-1");
+    l.set_enabled(dp, false);
+    assert_eq!(l.rect(dp), None, "it takes no part in the layout");
+    assert_eq!(l.rect_any(dp), before, "its rectangle stays where it was");
+    assert!(!l.rects().iter().any(|(i, _)| *i == dp));
+    assert!(l.problems().is_empty(), "{:?}", l.problems());
+    // Hyprland reports no mode and no position for a disabled output: the
+    // rectangle then falls back to the first mode the monitor lists.
+    l.outputs[dp].rule.position = None;
+    l.outputs[dp].rule.mode = None;
+    l.outputs[dp].info.x = 0;
+    l.outputs[dp].info.y = 0;
+    l.outputs[dp].info.width = 0;
+    l.outputs[dp].info.height = 0;
+    let r = l.rect_any(dp);
+    assert_eq!((r.x, r.y), (0, 0));
+    assert_eq!((r.w, r.h), (2560, 1440), "the first listed mode");
+}
+
+#[test]
 fn vrr_cycles_through_all_values() {
     let mut l = layout();
     let edp = l.index("eDP-1").unwrap();

@@ -512,12 +512,11 @@ impl Layout {
         !rule.is_disabled() && rule.mirror.as_deref().is_none_or(str::is_empty)
     }
 
-    /// The output's rectangle in logical coordinates, if it is active.
+    /// The output's rectangle in logical coordinates, whether or not it
+    /// takes part in the layout. For a disabled or mirrored output it is
+    /// the rectangle it would cover, not a place in the layout.
     #[must_use]
-    pub fn rect(&self, i: usize) -> Option<Rect> {
-        if !self.is_active(i) {
-            return None;
-        }
+    pub fn rect_any(&self, i: usize) -> Rect {
         let output = &self.outputs[i];
         let (width, height) = geometry::logical_size(
             self.pixels(i),
@@ -528,7 +527,13 @@ impl Layout {
             Some(Position::At { x, y }) => (x, y),
             _ => (output.info.x, output.info.y),
         };
-        Some(Rect::new(left, top, width, height))
+        Rect::new(left, top, width, height)
+    }
+
+    /// The output's rectangle in logical coordinates, if it is active.
+    #[must_use]
+    pub fn rect(&self, i: usize) -> Option<Rect> {
+        self.is_active(i).then(|| self.rect_any(i))
     }
 
     /// The rectangles of the active outputs, with their index.
