@@ -11,7 +11,7 @@ hide:
 
 <div class="ht-hero" markdown>
 
-<span class="ht-pill"><span class="ht-dot"></span>v0.1.0 &middot; Hyprland 0.55+ Lua &middot; hyprlang &middot; Caelestia</span>
+<span class="ht-pill"><span class="ht-dot"></span>v0.2.0 &middot; Hyprland 0.55+ Lua &middot; hyprlang &middot; Caelestia</span>
 
 # Arrange your monitors. <span class="ht-gradient-text">Keep your config.</span>
 
@@ -142,8 +142,14 @@ flowchart LR
 
 !!! success "Status"
 
-    **v0.1.0 is released.** Binaries, `.deb`, `.rpm`, a vendored source
-    tarball, an SBOM and signed checksums are attached to the
+    **v0.2.0 is out.** A monitor you switch off keeps its place on the
+    canvas &mdash; hatched, grey, still selectable and one `e` from coming
+    back; one disabled in your file, which Hyprland gives no position, is
+    drawn beside the layout and lands exactly there when you enable it.
+    See [the terminal interface](guide/tui.md#monitors-that-are-off).
+
+    Binaries, `.deb`, `.rpm`, a vendored source tarball, an SBOM and
+    signed checksums are attached to the
     [release](https://github.com/FPGArtktic/hyprtilt/releases/latest); see
     [Installation](guide/installation.md). `list`, `doctor`, `adopt` and
     `unmanage` were checked against a real Hyprland 0.56.2 session with a

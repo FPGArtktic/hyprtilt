@@ -14,7 +14,7 @@ x86_64 and aarch64 Linux.
 
     The packages below are attached to
     [every release](https://github.com/FPGArtktic/hyprtilt/releases/latest);
-    `v0.1.0` is the current one, and both AUR packages are published.
+    `v0.2.0` is the current one, and both AUR packages are published.
 
 ## Arch Linux (AUR)
 
@@ -48,15 +48,15 @@ static, so the package installs on older releases as well (tested on
 Ubuntu 22.04, Ubuntu 24.04 and Debian 12):
 
 ```sh
-curl -LO https://github.com/FPGArtktic/hyprtilt/releases/download/v0.1.0/hyprtilt_0.1.0-1_amd64.deb
-sudo apt install ./hyprtilt_0.1.0-1_amd64.deb
+curl -LO https://github.com/FPGArtktic/hyprtilt/releases/download/v0.2.0/hyprtilt_0.2.0-1_amd64.deb
+sudo apt install ./hyprtilt_0.2.0-1_amd64.deb
 ```
 
 ## Fedora and other RPM systems
 
 ```sh
-curl -LO https://github.com/FPGArtktic/hyprtilt/releases/download/v0.1.0/hyprtilt-0.1.0-1.x86_64.rpm
-sudo dnf install ./hyprtilt-0.1.0-1.x86_64.rpm
+curl -LO https://github.com/FPGArtktic/hyprtilt/releases/download/v0.2.0/hyprtilt-0.2.0-1.x86_64.rpm
+sudo dnf install ./hyprtilt-0.2.0-1.x86_64.rpm
 ```
 
 ## Release archives

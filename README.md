@@ -24,10 +24,15 @@ configuration arrived; the hyprlang backend covers the older versions that
 Ubuntu and Debian still ship.
 
 > [!NOTE]
-> **v0.1.0 is the first release.** Everything described below is
-> implemented and tested; `list`, `doctor`, `adopt` and `unmanage` were also
-> checked against a real Hyprland 0.56.2 session with a Caelestia
-> configuration. A few Hyprland behaviours are still marked as needing
+> **New in v0.2.0.** A monitor you switch off keeps its place on the
+> layout: hatched and grey, still selectable with the keyboard or the
+> mouse, and one `e` from coming back. One disabled in your file, which
+> Hyprland gives no position of its own, is drawn beside the layout and
+> lands exactly there when you enable it.
+>
+> Everything described below is implemented and tested; `list`, `doctor`,
+> `adopt` and `unmanage` were also checked against a real Hyprland 0.56.2
+> session with a Caelestia configuration. A few Hyprland behaviours are still marked as needing
 > confirmation on other hardware in the
 > [API notes](docs/hyprland-lua-api.md).
 
@@ -206,9 +211,6 @@ hardware (listed in the
   verification polls for up to 3 seconds.
 
 ## Installation
-
-> Nothing is released yet; the release packages below describe what every
-> release will provide.
 
 **Arch Linux (AUR).** [`hyprtilt`](https://aur.archlinux.org/packages/hyprtilt)
 builds the latest release,

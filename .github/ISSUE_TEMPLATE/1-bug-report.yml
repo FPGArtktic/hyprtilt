@@ -33,7 +33,7 @@ body:
     attributes:
       label: hyprtilt version
       description: The output of `hyprtilt --version`.
-      placeholder: hyprtilt 0.1.0
+      placeholder: hyprtilt 0.2.0
     validations:
       required: true
 
