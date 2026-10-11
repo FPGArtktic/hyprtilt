@@ -126,6 +126,10 @@ with the logical size, rotation, VRR and the line of its rule.
 | `o`, `p` | adopt rules from outside the block, profiles |
 | `?`, `q` | help, quit |
 
+A monitor that is off keeps its place in the drawing, hatched and grey,
+so `e` can bring it back; one disabled in the file, which Hyprland gives
+no position, is drawn beside the layout and lands there when enabled.
+
 The mouse selects and drags monitors. Connecting or disconnecting a
 monitor rebuilds the layout and keeps your edits.
 

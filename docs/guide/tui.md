@@ -14,9 +14,11 @@ the managed block and shows the result before anything reaches Hyprland.
 
 ![The terminal interface with three monitors; DP-1 is selected and its refresh rate lowered to 120 Hz](../assets/screenshots/refresh.png)
 
-- **Layout** draws the enabled monitors to scale in logical pixels, with
-  their name, resolution, refresh rate, rotation and scale. The selected
-  monitor has a thick border; overlapping monitors are red.
+- **Layout** draws the monitors to scale in logical pixels, with their
+  name, resolution, refresh rate, rotation and scale. The selected
+  monitor has a thick border; overlapping monitors are red. A monitor
+  that is off keeps its place, hatched and grey, so that it can be
+  selected and switched back on with ++e++.
 - **Monitor** shows the selected monitor: its mode, the refresh rate and
   every rate its current resolution offers, position, scale and the
   logical size it gives, rotation, VRR, whether it is enabled, the line of
@@ -50,9 +52,25 @@ Below 80 columns the monitor panel moves under the layout.
 | ++w++ | write into the file and reload; kept only when confirmed |
 | ++o++ | adopt monitor rules from outside the managed block |
 | ++p++ | profiles: load or save |
-| mouse | a click selects a monitor, dragging moves it on a 10 px grid |
+| mouse | a click selects a monitor, dragging moves it on a 10 px grid; a monitor that is off can be selected but not dragged |
 | ++question++ | help |
 | ++q++, ++esc++ | quit |
+
+### Monitors that are off
+
+A monitor disabled by its rule is drawn where it belongs, hatched and
+grey, with its name, `disabled` and the size it would have.
+
+++e++ switches the selected monitor off and on again. It is refused for
+the last monitor still in the layout, because a session with no monitor
+left cannot be undone from the screen it just lost.
+
+Hyprland arranges no monitor it has disabled, so one disabled in the
+file has no position of its own. hyprtilt then draws it beside the
+layout, with the tops aligned, and writes exactly that position when
+you enable it: the box does not move, the monitors do not overlap and no
+gap opens between them. A monitor you switch off here keeps the position
+it already had.
 
 The same table is in the help popup (++question++):
 

@@ -514,6 +514,12 @@ decisions above.
   name a resolution); commands that need the live state exit with 3.
 - **Disabled hyprlang rules** are written as `monitor = SEL, disable`, which
   drops the rule's other fields, as Hyprland does.
+- **Monitors that are off** stay on the canvas, hatched and grey, so that
+  they can be selected and enabled: `Layout::rect_any` answers for an
+  output that takes no part in the layout, and `Layout::landing_rects`
+  puts one with no position of its own flush to the right of the layout,
+  which is the position `set_enabled` writes when it is enabled. They
+  still take no part in overlap and gap detection.
 - **Adopting in hyprlang** puts the block where the last adopted rule was
   and refuses to move a rule across a rule that stays outside and could
   interact with it (`AdoptCrossing`, with the line).
