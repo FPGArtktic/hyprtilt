@@ -1,6 +1,6 @@
 pkgbase = hyprtilt
 	pkgdesc = TUI and CLI for Hyprland monitor layout that edits your Lua or hyprlang config in place
-	pkgver = 0.1.0
+	pkgver = 0.2.0
 	pkgrel = 1
 	url = https://github.com/FPGArtktic/hyprtilt
 	arch = x86_64
@@ -12,7 +12,7 @@ pkgbase = hyprtilt
 	optdepends = hyprland: the compositor whose monitors hyprtilt arranges
 	optdepends = lua: syntax check of Lua configuration files before hyprtilt writes them
 	options = !debug
-	source = hyprtilt-0.1.0.tar.gz::https://github.com/FPGArtktic/hyprtilt/archive/v0.1.0.tar.gz
+	source = hyprtilt-0.2.0.tar.gz::https://github.com/FPGArtktic/hyprtilt/archive/v0.2.0.tar.gz
 	sha256sums = SKIP
 
 pkgname = hyprtilt

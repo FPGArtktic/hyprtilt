@@ -20,7 +20,7 @@
 # shellcheck shell=bash disable=SC2034,SC2154,SC2164
 
 pkgname=hyprtilt
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='TUI and CLI for Hyprland monitor layout that edits your Lua or hyprlang config in place'
 arch=('x86_64' 'aarch64')
