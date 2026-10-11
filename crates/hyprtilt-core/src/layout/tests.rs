@@ -248,6 +248,35 @@ fn a_disabled_output_keeps_its_rectangle() {
 }
 
 #[test]
+fn a_disabled_output_without_a_position_lands_beside_the_layout() {
+    let mut l = layout();
+    let dp = l.index("DP-1").unwrap();
+    l.set_enabled(dp, false);
+    assert_eq!(
+        l.landing_rects(),
+        [(dp, Rect::new(3360, 975, 2560, 1440))],
+        "the rule still says where it is"
+    );
+    // Disabling it and enabling it again says nothing new about it.
+    l.set_enabled(dp, true);
+    assert_eq!(l.rules(), block());
+    // An output Hyprland never arranged reports neither a position of its
+    // own nor a live one: it goes to the right of the other two.
+    l.set_enabled(dp, false);
+    l.outputs[dp].rule.position = None;
+    l.outputs[dp].info.x = 0;
+    l.outputs[dp].info.y = 0;
+    assert_eq!(l.landing_rects(), [(dp, Rect::new(3360, 0, 2560, 1440))]);
+    l.set_enabled(dp, true);
+    assert_eq!(
+        l.outputs[dp].rule.position,
+        Some(Position::At { x: 3360, y: 0 }),
+        "enabling keeps it where its box was drawn"
+    );
+    assert!(l.problems().is_empty(), "{:?}", l.problems());
+}
+
+#[test]
 fn vrr_cycles_through_all_values() {
     let mut l = layout();
     let edp = l.index("eDP-1").unwrap();

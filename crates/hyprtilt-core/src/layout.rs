@@ -544,6 +544,34 @@ impl Layout {
             .collect()
     }
 
+    /// Where the disabled outputs would land if they were enabled: each
+    /// keeps the rectangle it has when that leaves the layout alone,
+    /// otherwise it goes flush to the right of everything placed before
+    /// it, tops aligned.
+    ///
+    /// Hyprland arranges no output it has disabled, so one disabled in the
+    /// file reports no position at all and would otherwise sit on top of
+    /// its neighbour at the origin.
+    #[must_use]
+    pub fn landing_rects(&self) -> Vec<(usize, Rect)> {
+        let mut placed: Vec<Rect> = self.rects().into_iter().map(|(_, r)| r).collect();
+        let mut landing = Vec::new();
+        for i in 0..self.outputs.len() {
+            if !self.outputs[i].rule.is_disabled() {
+                continue;
+            }
+            let mut mine = self.rect_any(i);
+            if let Some(bounds) = geometry::bounds(&placed)
+                && placed.iter().any(|r| r.overlaps(mine))
+            {
+                mine = mine.at(bounds.right(), bounds.y);
+            }
+            placed.push(mine);
+            landing.push((i, mine));
+        }
+        landing
+    }
+
     /// Everything wrong with the layout.
     #[must_use]
     pub fn problems(&self) -> Vec<Problem> {
@@ -766,9 +794,25 @@ impl Layout {
     }
 
     /// Enable or disable an output. Enabling removes `disabled` from the
-    /// rule, so that the file says nothing it does not need to.
+    /// rule, so that the file says nothing it does not need to, and gives
+    /// an output with no place of its own the one from
+    /// [`Layout::landing_rects`], so that it does not land on a neighbour.
     pub fn set_enabled(&mut self, i: usize, enabled: bool) {
-        self.outputs[i].rule.disabled = if enabled { None } else { Some(true) };
+        if !enabled {
+            self.outputs[i].rule.disabled = Some(true);
+            return;
+        }
+        let landing = self
+            .landing_rects()
+            .into_iter()
+            .find(|(j, _)| *j == i)
+            .map(|(_, r)| r);
+        self.outputs[i].rule.disabled = None;
+        if let Some(r) = landing
+            && r != self.rect_any(i)
+        {
+            self.move_to(i, r.x, r.y);
+        }
     }
 
     /// Cycle VRR: unset, off, on, fullscreen, fullscreen games and video,
