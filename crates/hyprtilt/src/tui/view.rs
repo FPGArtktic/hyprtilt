@@ -6,7 +6,7 @@
 
 use hyprtilt_core::apply::Phase;
 use hyprtilt_core::geometry::{ScaleFit, format_scale, logical_size};
-use hyprtilt_core::layout::Problem;
+use hyprtilt_core::layout::{Layout, Problem};
 use hyprtilt_core::model::format_refresh;
 use ratatui::Frame;
 use ratatui::layout::{Constraint, Layout as Split, Rect as Area};
@@ -69,7 +69,7 @@ pub(crate) fn draw(frame: &mut Frame, app: &App) -> Placement {
         details_area,
     );
     frame.render_widget(Paragraph::new(status_line(app)), status);
-    frame.render_widget(Paragraph::new(hint_line()).style(LABEL), hints);
+    frame.render_widget(Paragraph::new(hint_line(app)).style(LABEL), hints);
     overlay(frame, app);
     placement
 }
@@ -108,14 +108,25 @@ fn status_line(app: &App) -> Line<'static> {
             };
             Line::styled(format!(" {}", m.text), Style::new().fg(color))
         }
+        None if app.selected_is_disabled() => {
+            Line::styled(" the monitor is disabled; e enables it", LABEL)
+        }
         None => Line::styled(" ? shows every key", LABEL),
     }
 }
 
-fn hint_line() -> Line<'static> {
-    Line::raw(
-        " Tab select  hjkl move  r rotate  m mode  [ ] Hz  s scale  a apply  w write  u undo  ? help  q quit",
-    )
+fn hint_line(app: &App) -> Line<'static> {
+    // The line is already full at 80 columns, so for a monitor that is
+    // off the key that brings it back takes the place of the keys that
+    // cannot move it.
+    let moving = if app.selected_is_disabled() {
+        "e enable "
+    } else {
+        "hjkl move"
+    };
+    Line::raw(format!(
+        " Tab select  {moving}  r rotate  m mode  [ ] Hz  s scale  a apply  w write  u undo  ? help  q quit"
+    ))
 }
 
 fn row(label: &str, value: impl Into<String>) -> Line<'static> {
@@ -123,6 +134,31 @@ fn row(label: &str, value: impl Into<String>) -> Line<'static> {
         Span::styled(format!("{label:<9} "), LABEL),
         Span::raw(value.into()),
     ])
+}
+
+/// The refresh rate the monitor will run at and the rates it offers.
+fn refresh_rows(layout: &Layout, i: usize) -> Vec<Line<'static>> {
+    let hz = layout.refresh(i);
+    let mut lines = vec![Line::from(vec![
+        Span::styled(format!("{:<9} ", "Refresh"), LABEL),
+        Span::styled(format!("{} Hz", format_refresh(hz)), BOLD.fg(Color::Cyan)),
+        Span::styled("  [ ]", LABEL),
+    ])];
+    let rates = layout.refresh_rates(i);
+    if rates.len() > 1 {
+        let mut spans = vec![Span::styled(format!("{:<9} ", "Rates"), LABEL)];
+        for rate in rates {
+            let style = if (rate - hz).abs() < 1.0 {
+                BOLD.fg(Color::Cyan)
+            } else {
+                Style::new()
+            };
+            spans.push(Span::styled(format_refresh(rate), style));
+            spans.push(Span::raw(" "));
+        }
+        lines.push(Line::from(spans));
+    }
+    lines
 }
 
 /// The details of the selected monitor.
@@ -141,29 +177,13 @@ fn details(app: &App) -> Vec<Line<'static>> {
     }
     let (w, h) = layout.pixels(i);
     lines.push(row("Mode", format!("{w}x{h}")));
-    let hz = layout.refresh(i);
-    lines.push(Line::from(vec![
-        Span::styled(format!("{:<9} ", "Refresh"), LABEL),
-        Span::styled(format!("{} Hz", format_refresh(hz)), BOLD.fg(Color::Cyan)),
-        Span::styled("  [ ]", LABEL),
-    ]));
-    let rates = layout.refresh_rates(i);
-    if rates.len() > 1 {
-        let mut spans = vec![Span::styled(format!("{:<9} ", "Rates"), LABEL)];
-        for rate in rates {
-            let style = if (rate - hz).abs() < 1.0 {
-                BOLD.fg(Color::Cyan)
-            } else {
-                Style::new()
-            };
-            spans.push(Span::styled(format_refresh(rate), style));
-            spans.push(Span::raw(" "));
-        }
-        lines.push(Line::from(spans));
-    }
-    if let Some(r) = layout.rect(i) {
-        lines.push(row("Position", format!("{}, {}", r.x, r.y)));
-    }
+    lines.extend(refresh_rows(layout, i));
+    let box_of = layout
+        .landing_rects()
+        .into_iter()
+        .find(|(k, _)| *k == i)
+        .map_or_else(|| layout.rect_any(i), |(_, r)| r);
+    lines.push(row("Position", format!("{}, {}", box_of.x, box_of.y)));
     let scale = layout.scale(i);
     let transform = o.rule.transform_or_default();
     let (lw, lh) = logical_size((w, h), transform, scale.scale);
@@ -190,14 +210,16 @@ fn details(app: &App) -> Vec<Line<'static>> {
     }
     lines.push(row("Rotation", transform_name(transform.value())));
     lines.push(row("VRR", vrr_name(o.rule.vrr)));
-    lines.push(row(
-        "State",
-        if o.rule.is_disabled() {
-            "disabled"
-        } else {
-            "enabled"
-        },
-    ));
+    let (state, state_style) = if o.rule.is_disabled() {
+        ("disabled", Style::new().fg(Color::Yellow))
+    } else {
+        ("enabled", Style::new())
+    };
+    lines.push(Line::from(vec![
+        Span::styled(format!("{:<9} ", "State"), LABEL),
+        Span::styled(state, state_style),
+        Span::styled("  e", LABEL),
+    ]));
     lines.push(row(
         "Rule",
         match app.file.line_of(&o.rule) {
@@ -230,7 +252,7 @@ fn details(app: &App) -> Vec<Line<'static>> {
 }
 
 /// The problems of the whole layout and the rules for absent monitors.
-fn layout_notes(layout: &hyprtilt_core::layout::Layout) -> Vec<Line<'static>> {
+fn layout_notes(layout: &Layout) -> Vec<Line<'static>> {
     let mut lines = Vec::new();
     let problems = layout.problems();
     if !problems.is_empty() {

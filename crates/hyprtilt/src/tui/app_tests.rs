@@ -238,6 +238,36 @@ fn the_last_active_monitor_stays_enabled() {
 }
 
 #[test]
+fn a_disabled_monitor_is_clickable_but_cannot_be_moved() {
+    let mut a = app();
+    type_keys(&mut a, "1e");
+    assert_eq!(message(&a), "HDMI-A-1 is now disabled");
+    let placement = canvas::place(&a.layout, Area::new(0, 0, 62, 20), a.selected);
+    let hdmi = placement.boxes.iter().find(|(i, _)| *i == HDMI).unwrap().1;
+    a.placement = Some(placement);
+    type_keys(&mut a, "3");
+    let (column, row) = (hdmi.x + 1, hdmi.y + 1);
+    mouse(&mut a, MouseEventKind::Down(MouseButton::Left), column, row);
+    assert_eq!(a.selected, HDMI, "its box can be clicked");
+    assert!(a.drag.is_none(), "but not dragged");
+    mouse(
+        &mut a,
+        MouseEventKind::Drag(MouseButton::Left),
+        column + 2,
+        row,
+    );
+    assert_eq!(a.layout.rect_any(HDMI).x, 0, "the drag moved nothing");
+    // The keys that move a monitor say why they do nothing.
+    type_keys(&mut a, "l");
+    assert_eq!(message(&a), "the monitor is disabled; e enables it");
+    type_keys(&mut a, "b");
+    assert_eq!(message(&a), "the monitor is disabled; e enables it");
+    type_keys(&mut a, "e");
+    assert!(!a.layout.outputs[HDMI].rule.is_disabled());
+    assert_eq!(message(&a), "HDMI-A-1 is now enabled");
+}
+
+#[test]
 fn rotation_flip_vrr_and_alignment() {
     let mut a = app();
     type_keys(&mut a, "1r");

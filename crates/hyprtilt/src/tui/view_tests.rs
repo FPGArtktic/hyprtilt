@@ -233,6 +233,26 @@ fn a_disabled_monitor_is_hatched() {
 }
 
 #[test]
+fn a_disabled_monitor_points_at_the_enable_key() {
+    let mut a = app();
+    // Disabled in the file: the interface has nothing to say yet.
+    a.layout.set_enabled(0, false);
+    let (text, _) = render(&a, 120, 40);
+    assert!(text.contains("State     disabled  e"), "{text}");
+    assert!(text.contains("Position  0, 0"), "{text}");
+    assert!(text.contains("e enable"), "{text}");
+    assert!(
+        text.contains("the monitor is disabled; e enables it"),
+        "{text}"
+    );
+    // An enabled monitor keeps the keys that move it.
+    type_keys(&mut a, "2");
+    let (text, _) = render(&a, 120, 40);
+    assert!(text.contains("State     enabled  e"), "{text}");
+    assert!(text.contains("hjkl move"), "{text}");
+}
+
+#[test]
 fn the_help_lists_every_key() {
     let mut a = app();
     type_keys(&mut a, "?");

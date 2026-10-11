@@ -503,12 +503,36 @@ impl App {
         effect
     }
 
+    /// Whether the rules disable the selected monitor.
+    pub(crate) fn selected_is_disabled(&self) -> bool {
+        self.layout
+            .outputs
+            .get(self.selected)
+            .is_some_and(|o| o.rule.is_disabled())
+    }
+
+    /// Say that the selected monitor is off, for the keys that cannot
+    /// move a monitor which takes no part in the layout.
+    fn refuse_if_disabled(&mut self) -> bool {
+        if !self.selected_is_disabled() {
+            return false;
+        }
+        self.say(Level::Info, "the monitor is disabled; e enables it");
+        true
+    }
+
     fn nudge(&mut self, dir: Direction, step: i32) {
+        if self.refuse_if_disabled() {
+            return;
+        }
         let snap = self.snap;
         self.edit(|l, i| l.nudge(i, dir, step, snap, BIG_STEP));
     }
 
     fn align(&mut self, align: Align) {
+        if self.refuse_if_disabled() {
+            return;
+        }
         let mut moved = false;
         self.edit(|l, i| moved = l.align(i, align));
         if !moved {
@@ -550,6 +574,9 @@ impl App {
             return;
         }
         self.edit(|l, i| l.set_enabled(i, !enabled));
+        let name = self.name();
+        let state = if enabled { "disabled" } else { "enabled" };
+        self.say(Level::Info, format!("{name} is now {state}"));
     }
 
     fn undo(&mut self) {
